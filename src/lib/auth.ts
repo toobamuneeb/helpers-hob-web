@@ -1,0 +1,91 @@
+import { NextRequest } from 'next/server'
+import { createSupabaseServerClient, supabaseAdmin } from './supabase'
+
+export interface AuthUser {
+  id: string
+  email: string
+  role: 'customer' | 'service_provider'
+  profile_status: 'incomplete' | 'pending' | 'verified' | 'suspended'
+}
+
+export async function authenticateRequest(request: NextRequest): Promise<AuthUser | null> {
+  try {
+    let userId: string | null = null
+
+    // 1. Try Bearer token first (mobile app sends this)
+    const authHeader = request.headers.get('authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7)
+      const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+      if (!error && user) {
+        userId = user.id
+      }
+    }
+
+    // 2. Fallback to cookie-based session (web browser)
+    if (!userId) {
+      const { supabase } = createSupabaseServerClient(request)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        userId = session.user.id
+      }
+    }
+
+    if (!userId) return null
+
+    // Fetch profile
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, email, role, profile_status')
+      .eq('user_id', userId)
+      .eq('is_deleted', false)
+      .single()
+
+    if (!profile) return null
+
+    return {
+      id: profile.user_id,
+      email: profile.email,
+      role: profile.role,
+      profile_status: profile.profile_status,
+    }
+  } catch {
+    return null
+  }
+}
+
+export function requireAuth<T = any>(handler: (request: NextRequest, user: AuthUser, context?: T) => Promise<Response>) {
+  return async (request: NextRequest, context?: T) => {
+    const user = await authenticateRequest(request)
+    
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    return handler(request, user, context)
+  }
+}
+
+export function requireRole(role: 'customer' | 'service_provider') {
+  return function<T = any>(handler: (request: NextRequest, user: AuthUser, context?: T) => Promise<Response>) {
+    return requireAuth(async (request: NextRequest, user: AuthUser, context?: T) => {
+      if (user.role !== role) {
+        return new Response(
+          JSON.stringify({ error: `${role} role required` }),
+          { 
+            status: 403,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      return handler(request, user, context)
+    })
+  }
+}
