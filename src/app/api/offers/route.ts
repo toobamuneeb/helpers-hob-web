@@ -71,6 +71,18 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
   const v = validateRequest(createOfferSchema, await request.json())
   if (!v.success) return new Response(JSON.stringify({ error: v.error }), { status: 400, headers: { 'Content-Type': 'application/json' } })
   const d = v.data
+  
+  console.log('🔵 Creating offer with params:', {
+    customer_id: user.id,
+    provider_id: d.provider_id,
+    skill_id: d.skill_id,
+    service_date: d.service_date,
+    service_time: d.service_time,
+    is_recurring: d.is_recurring,
+    recurrence_type: d.recurrence_type,
+    recurrence_end_date: d.recurrence_end_date
+  })
+  
   const { data, error } = await supabaseAdmin.rpc('create_job_offer', {
     p_customer_id: user.id, p_provider_id: d.provider_id, p_skill_id: d.skill_id,
     p_offer_title: d.offer_title, p_service_description: d.service_description,
@@ -83,7 +95,18 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
     p_is_recurring: d.is_recurring, p_recurrence_type: d.recurrence_type,
     p_recurrence_end_date: d.recurrence_end_date
   })
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+  
+  if (error) {
+    console.error('❌ Offer creation failed:', {
+      error: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+  }
+  
+  console.log('✅ Offer created successfully:', data)
   logger.info('Offer created', { userId: user.id, providerId: d.provider_id })
   return new Response(JSON.stringify({ success: true, data }), { status: 201, headers: { 'Content-Type': 'application/json' } })
 })

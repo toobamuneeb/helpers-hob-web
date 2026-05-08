@@ -1,4 +1,5 @@
-// POST actions on a specific offer
+// GET /api/offers/[offerId] - Get offer details by ID
+// POST /api/offers/[offerId] - Perform actions on offer
 // Actions: accept, reject, start, mark-awaiting, mark-complete-provider, complete, cancel
 import { NextRequest } from 'next/server'
 import { requireAuth } from '@/lib/auth'
@@ -14,6 +15,116 @@ const actionSchema = z.object({
   cancel_series: z.boolean().optional().default(false),
 })
 
+// GET - Fetch offer details
+export const GET = requireAuth(async (
+  request: NextRequest,
+  user,
+  context?: { params?: Promise<{ offerId: string }> }
+) => {
+  const rl = await rateLimitMiddleware('general')(request)
+  if (rl) return rl
+
+  const { offerId } = await (context?.params ?? Promise.resolve({ offerId: '' }))
+  if (!offerId) {
+    return new Response(JSON.stringify({ error: 'Offer ID required' }), { 
+      status: 400, 
+      headers: { 'Content-Type': 'application/json' } 
+    })
+  }
+
+  try {
+    // Fetch offer with all related data
+    const { data, error } = await supabaseAdmin
+      .from('job_offers')
+      .select(`
+        *,
+        customer:profiles!job_offers_customer_id_fkey(user_id, name, profile_image_url),
+        provider:profiles!job_offers_provider_id_fkey(user_id, name, profile_image_url),
+        skill:skills(id, name, icon, color)
+      `)
+      .eq('offer_id', offerId)
+      .single()
+
+    if (error) {
+      logger.error('Failed to fetch offer', { error, offerId, userId: user.id })
+      return new Response(JSON.stringify({ error: error.message }), { 
+        status: 500, 
+        headers: { 'Content-Type': 'application/json' } 
+      })
+    }
+
+    if (!data) {
+      return new Response(JSON.stringify({ error: 'Offer not found' }), { 
+        status: 404, 
+        headers: { 'Content-Type': 'application/json' } 
+      })
+    }
+
+    // Check for reviews separately
+    const { data: customerReview } = await supabaseAdmin
+      .from('job_reviews')
+      .select('review_id')
+      .eq('offer_id', offerId)
+      .eq('reviewer_role', 'customer')
+      .maybeSingle()
+
+    const { data: providerReview } = await supabaseAdmin
+      .from('job_reviews')
+      .select('review_id')
+      .eq('offer_id', offerId)
+      .eq('reviewer_role', 'service_provider')
+      .maybeSingle()
+
+    if (error) {
+      logger.error('Failed to fetch offer', { error, offerId, userId: user.id })
+      return new Response(JSON.stringify({ error: error.message }), { 
+        status: 500, 
+        headers: { 'Content-Type': 'application/json' } 
+      })
+    }
+
+    if (!data) {
+      return new Response(JSON.stringify({ error: 'Offer not found' }), { 
+        status: 404, 
+        headers: { 'Content-Type': 'application/json' } 
+      })
+    }
+
+    // Format response
+    const formatted = {
+      ...data,
+      // Skill info
+      skill_name: data.skill?.name,
+      skill_color: data.skill?.color,
+      skill_icon: data.skill?.icon,
+      // Customer info
+      customer_id: data.customer?.user_id,
+      customer_name: data.customer?.name,
+      customer_avatar: data.customer?.profile_image_url,
+      // Provider info
+      provider_id: data.provider?.user_id,
+      provider_name: data.provider?.name,
+      provider_avatar: data.provider?.profile_image_url,
+      // Review flags
+      has_customer_review: !!customerReview,
+      has_provider_review: !!providerReview,
+    }
+
+    logger.info('Offer fetched', { offerId, userId: user.id })
+    return new Response(JSON.stringify({ success: true, data: formatted }), { 
+      status: 200, 
+      headers: { 'Content-Type': 'application/json' } 
+    })
+  } catch (err: any) {
+    logger.error('Offer fetch error', { error: err.message, offerId, userId: user.id })
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { 
+      status: 500, 
+      headers: { 'Content-Type': 'application/json' } 
+    })
+  }
+})
+
+// POST - Perform actions on offer
 export const POST = requireAuth(async (
   request: NextRequest,
   user,
