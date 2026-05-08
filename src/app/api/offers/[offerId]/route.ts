@@ -46,7 +46,7 @@ export const GET = requireAuth(async (
       .single()
 
     if (error) {
-      logger.error('Failed to fetch offer', { error, offerId, userId: user.id })
+      logger.error('Failed to fetch offer', { error: error.message, offerId, userId: user.id })
       return new Response(JSON.stringify({ error: error.message }), { 
         status: 500, 
         headers: { 'Content-Type': 'application/json' } 
@@ -74,21 +74,6 @@ export const GET = requireAuth(async (
       .eq('offer_id', offerId)
       .eq('reviewer_role', 'service_provider')
       .maybeSingle()
-
-    if (error) {
-      logger.error('Failed to fetch offer', { error, offerId, userId: user.id })
-      return new Response(JSON.stringify({ error: error.message }), { 
-        status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
-      })
-    }
-
-    if (!data) {
-      return new Response(JSON.stringify({ error: 'Offer not found' }), { 
-        status: 404, 
-        headers: { 'Content-Type': 'application/json' } 
-      })
-    }
 
     // Format response
     const formatted = {
