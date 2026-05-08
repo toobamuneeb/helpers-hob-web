@@ -14,8 +14,8 @@ const createOfferSchema = z.object({
   offer_title:         z.string().min(3).max(60),
   service_description: z.string().min(10).max(1000),
   location_address:    z.string().min(5).max(500),
-  service_date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  service_time:        z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/),
+  service_date:        z.string().datetime(), // Accept ISO datetime string
+  service_time:        z.string().datetime(), // Accept ISO datetime string
   payment_amount:      z.number().positive().max(10000),
   chat_id:             z.string().uuid().optional(),
   job_id:              z.string().uuid().optional(),
