@@ -9,7 +9,7 @@ import { z } from 'zod'
 import { validateRequest } from '@/lib/validation'
 
 const actionSchema = z.object({
-  action: z.enum(['accept', 'reject', 'start', 'mark-awaiting', 'mark-complete-provider', 'complete', 'cancel']),
+  action: z.enum(['accept', 'reject', 'start', 'mark-awaiting', 'mark-complete-provider', 'complete', 'cancel', 'mark-not-completed']),
   reason: z.string().optional(),
   cancel_series: z.boolean().optional().default(false),
 })
@@ -55,6 +55,10 @@ export const POST = requireAuth(async (
     case 'complete':
       // offer_status: awaiting_confirmation → completed (customer confirms)
       ;({ data, error } = await supabaseAdmin.rpc('mark_offer_complete_by_customer', { p_offer_id: offerId, p_customer_id: user.id }))
+      break
+    case 'mark-not-completed':
+      // offer_status: awaiting_confirmation → active (customer marks not completed)
+      ;({ data, error } = await supabaseAdmin.rpc('mark_offer_not_completed', { p_offer_id: offerId, p_customer_id: user.id }))
       break
     case 'cancel':
       ;({ data, error } = await supabaseAdmin.rpc('cancel_job_offer', {

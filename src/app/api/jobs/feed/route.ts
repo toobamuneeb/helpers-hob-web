@@ -14,6 +14,9 @@ export const GET = requireRole('service_provider')(async (request: NextRequest, 
   const { data, error } = await supabaseAdmin.rpc('get_open_job_posts_for_provider', {
     p_provider_id: user.id, p_limit: limit, p_offset: offset, p_skill_filter: skill_filter
   })
-  if (error) return new Response(JSON.stringify({ error: 'Failed to fetch feed' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+  if (error) {
+    console.error('Job feed error:', error)
+    return new Response(JSON.stringify({ error: 'Failed to fetch feed', details: error.message, code: error.code }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+  }
   return new Response(JSON.stringify({ success: true, data: data || [], pagination: { limit, offset, has_more: data && data.length === limit } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 })
