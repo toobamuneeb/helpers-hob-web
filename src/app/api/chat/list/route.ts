@@ -21,8 +21,8 @@ export const GET = async (request: NextRequest) => {
       provider:profiles!chats_service_provider_id_fkey(user_id, name, profile_image_url)
     `)
     .or(`customer_id.eq.${userId},service_provider_id.eq.${userId}`)
-    .order('last_message_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
+    .not('last_message_at', 'is', null) // Only show chats with at least one message
+    .order('last_message_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) return new Response(JSON.stringify({ error: 'Failed to fetch chats' }), { status: 500, headers: { 'Content-Type': 'application/json' } })
