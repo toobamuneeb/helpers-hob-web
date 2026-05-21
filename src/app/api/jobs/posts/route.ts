@@ -15,15 +15,15 @@ const createPostSchema = z.object({
   location_address:    z.string().min(5).max(500),
   location_lat:        z.number().optional(),
   location_lng:        z.number().optional(),
-  service_date:        z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  service_time:        z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).optional(),
+  service_date:        z.string().datetime().optional(), // ISO datetime string (TIMESTAMPTZ)
+  service_time:        z.string().datetime().optional(), // ISO datetime string (TIMESTAMPTZ)
   service_duration:    z.string().optional(),
   payment_amount:      z.number().positive().optional(),
   image_url:           z.string().url().optional(),
   currency:            z.string().length(3).default('EUR'),
   is_recurring:        z.boolean().default(false),
   recurrence_type:     z.enum(['daily','weekly','bi-weekly','monthly']).optional(),
-  recurrence_end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  recurrence_end_date: z.string().datetime().optional(), // ISO datetime string (TIMESTAMPTZ)
 })
 
 export const GET = requireRole('customer')(async (request: NextRequest, user) => {
@@ -43,9 +43,27 @@ export const POST = requireRole('customer')(async (request: NextRequest, user) =
   const rl = await rateLimitMiddleware('jobCreation')(request)
   if (rl) return rl
   const body = await request.json()
+  
+  console.log('🔵 Creating job post with body:', JSON.stringify(body, null, 2))
+  
   const v = validateRequest(createPostSchema, body)
-  if (!v.success) return new Response(JSON.stringify({ error: v.error }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+  if (!v.success) {
+    console.log('❌ Validation failed:', v.error)
+    return new Response(JSON.stringify({ error: v.error }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+  }
+  
   const d = v.data
+  console.log('✅ Validation passed, calling create_job_post with:', {
+    p_customer_id: user.id,
+    p_skill_id: d.skill_id,
+    p_job_title: d.job_title,
+    p_service_date: d.service_date,
+    p_service_time: d.service_time,
+    p_is_recurring: d.is_recurring,
+    p_recurrence_type: d.recurrence_type,
+    p_recurrence_end_date: d.recurrence_end_date
+  })
+  
   const { data, error } = await supabaseAdmin.rpc('create_job_post', {
     p_customer_id: user.id, p_skill_id: d.skill_id, p_job_title: d.job_title,
     p_service_description: d.service_description, p_location_address: d.location_address,
@@ -56,7 +74,18 @@ export const POST = requireRole('customer')(async (request: NextRequest, user) =
     p_is_recurring: d.is_recurring, p_recurrence_type: d.recurrence_type,
     p_recurrence_end_date: d.recurrence_end_date
   })
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+  
+  if (error) {
+    console.error('❌ Database error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
+  }
+  
+  console.log('✅ Job post created successfully:', data)
   logger.info('Job post created', { userId: user.id })
   return new Response(JSON.stringify({ success: true, data }), { status: 201, headers: { 'Content-Type': 'application/json' } })
 })
