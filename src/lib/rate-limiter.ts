@@ -17,6 +17,11 @@ const rateLimiters = {
     points: 60, // Number of requests
     duration: 60, // Per 60 seconds
   }),
+  
+  payment: new RateLimiterMemory({
+    points: 5, // Number of payment attempts
+    duration: 300, // Per 5 minutes
+  }),
 }
 
 // Helper function to get client IP
