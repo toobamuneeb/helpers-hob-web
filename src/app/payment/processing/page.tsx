@@ -1,9 +1,9 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
-export default function PaymentProcessing() {
+function PaymentProcessingContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get('payment_id');
   const offerId = searchParams.get('offer_id');
@@ -192,5 +192,13 @@ export default function PaymentProcessing() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function PaymentProcessing() {
+  return (
+    <Suspense fallback={null}>
+      <PaymentProcessingContent />
+    </Suspense>
   );
 }
