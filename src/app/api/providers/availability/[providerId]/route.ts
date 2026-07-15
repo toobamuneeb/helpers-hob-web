@@ -4,10 +4,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { providerId: string } }
+  { params }: { params: Promise<{ providerId: string }> }
 ) {
   try {
-    const { providerId } = params;
+    const { providerId } = await params;
 
     // Fetch availability from database
     const { data: slots, error } = await supabaseAdmin
