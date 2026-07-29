@@ -16,10 +16,22 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthUse
     const authHeader = request.headers.get('authorization')
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.slice(7)
+      console.log('🔑 Attempting to authenticate with Bearer token:', token.substring(0, 20) + '...')
+      
       const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+      
+      if (error) {
+        console.error('❌ Supabase auth error:', error.message)
+      }
+      
       if (!error && user) {
         userId = user.id
+        console.log('✅ User authenticated via Bearer token:', userId)
+      } else {
+        console.warn('⚠️ Bearer token authentication failed')
       }
+    } else {
+      console.log('ℹ️ No Bearer token in Authorization header')
     }
 
     // 2. Fallback to cookie-based session (web browser)
@@ -28,28 +40,42 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthUse
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         userId = session.user.id
+        console.log('✅ User authenticated via session cookie:', userId)
       }
     }
 
-    if (!userId) return null
+    if (!userId) {
+      console.warn('❌ No valid authentication found')
+      return null
+    }
 
     // Fetch profile
-    const { data: profile } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('user_id, email, role, profile_status')
       .eq('user_id', userId)
       .eq('is_deleted', false)
       .single()
 
-    if (!profile) return null
+    if (profileError) {
+      console.error('❌ Profile fetch error:', profileError.message)
+    }
 
+    if (!profile) {
+      console.warn('❌ No profile found for user:', userId)
+      return null
+    }
+
+    console.log('✅ Full auth successful:', { userId: profile.user_id, role: profile.role })
+    
     return {
       id: profile.user_id,
       email: profile.email,
       role: profile.role,
       profile_status: profile.profile_status,
     }
-  } catch {
+  } catch (err) {
+    console.error('❌ Auth exception:', err)
     return null
   }
 }

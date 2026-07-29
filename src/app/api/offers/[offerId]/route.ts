@@ -8,6 +8,7 @@ import { rateLimitMiddleware } from '@/lib/rate-limiter'
 import logger from '@/lib/logger'
 import { z } from 'zod'
 import { validateRequest } from '@/lib/validation'
+import { checkProviderTokenStatus } from '@/lib/tokens'
 
 const actionSchema = z.object({
   action: z.enum(['accept', 'reject', 'start', 'mark-awaiting', 'mark-complete-provider', 'complete', 'cancel', 'mark-not-completed']),
@@ -169,6 +170,26 @@ export const POST = requireAuth(async (
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 
+  // On provider mark-complete of a RECURRING job, check if provider needs to
+  // pay the €5 monthly token. Return status so frontend can show payment modal.
+  // NO automatic charging - frontend must show modal and user confirms payment.
+  let provider_token: Awaited<ReturnType<typeof checkProviderTokenStatus>> | undefined
+  if (action === 'mark-complete-provider') {
+    try {
+      const { data: offer } = await supabaseAdmin
+        .from('job_offers')
+        .select('is_recurring, provider_id')
+        .eq('offer_id', offerId)
+        .single()
+      if (offer?.is_recurring && offer.provider_id === user.id) {
+        provider_token = await checkProviderTokenStatus(user.id, offerId)
+        logger.info('Provider token status checked at mark-complete', { offerId, status: provider_token.status })
+      }
+    } catch (tokErr: any) {
+      logger.warn('Provider token check failed at mark-complete', { offerId, error: tokErr.message })
+    }
+  }
+
   logger.info('Offer action', { action, offerId, userId: user.id })
-  return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  return new Response(JSON.stringify({ success: true, data, provider_token }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 })

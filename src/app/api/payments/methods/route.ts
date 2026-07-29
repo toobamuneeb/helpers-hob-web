@@ -1,26 +1,19 @@
 /**
  * GET /api/payments/methods
- * Get customer's saved payment methods (Mollie mandates)
+ * List the user's saved cards (Stripe payment methods on the platform customer).
  */
-
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getCustomerPaymentMethods } from "../../../../lib/mollie";
+import { listSavedCards } from "@/lib/stripe";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  },
+  { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user from JWT token
     const authHeader = request.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json(
@@ -28,61 +21,50 @@ export async function GET(request: NextRequest) {
         { status: 401 },
       );
     }
-
     const token = authHeader.substring(7);
     const {
       data: { user },
       error: authError,
     } = await supabaseAdmin.auth.getUser(token);
-
     if (authError || !user) {
-      console.error("❌ Auth error:", authError);
       return NextResponse.json(
         { success: false, error: "Invalid token" },
         { status: 401 },
       );
     }
 
-    console.log("🔵 payment-methods - User ID:", user.id);
-
-    // Get customer's Mollie customer ID from profiles table
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("mollie_customer_id")
+      .select("stripe_customer_id")
       .eq("user_id", user.id)
       .single();
 
-    if (profileError || !profile?.mollie_customer_id) {
-      console.log("⚠️ No Mollie customer ID found for user");
-      return NextResponse.json({
-        success: true,
-        data: { methods: [] },
-      });
+    if (!profile?.stripe_customer_id) {
+      return NextResponse.json({ success: true, data: { methods: [] } });
     }
 
-    console.log("🔵 Mollie customer ID:", profile.mollie_customer_id);
+    const cards = await listSavedCards(profile.stripe_customer_id);
 
-    // Fetch mandates from Mollie using helper function
-    const validMandates = await getCustomerPaymentMethods(
-      profile.mollie_customer_id,
-    );
-
-    console.log("✅ Returning valid mandates:", validMandates.length);
+    // Keep the response shape the app already understands (id + card fields).
+    const methods = cards.map((c) => ({
+      id: c.id,
+      method: "creditcard",
+      cardLabel: c.brand,
+      cardNumber: c.last4,
+      cardHolder: undefined,
+      exp_month: c.exp_month,
+      exp_year: c.exp_year,
+      is_default: c.is_default,
+      createdAt: null,
+    }));
 
     return NextResponse.json({
       success: true,
-      data: {
-        methods: validMandates,
-        customer_id: profile.mollie_customer_id,
-      },
+      data: { methods, customer_id: profile.stripe_customer_id },
     });
   } catch (error: any) {
-    console.error("❌ Get payment methods error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || "Failed to fetch payment methods",
-      },
+      { success: false, error: error.message || "Failed to fetch payment methods" },
       { status: 500 },
     );
   }

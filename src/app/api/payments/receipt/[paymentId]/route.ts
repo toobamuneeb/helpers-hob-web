@@ -33,13 +33,16 @@ export const GET = requireAuth(
         currency,
         payment_status,
         payment_type,
+        payment_kind,
         mollie_payment_id,
+        stripe_payment_intent_id,
         paid_at,
         created_at,
         job_offers!payments_offer_id_fkey (
           offer_title,
           service_date,
           pay_through_platform,
+          is_recurring,
           customer_id,
           provider_id,
           customer:profiles!job_offers_customer_id_fkey (
@@ -79,12 +82,53 @@ export const GET = requireAuth(
       // Format receipt data
       const isCashPayment = jobOffer.pay_through_platform === false;
       const cashAmount = parseFloat(payment.cash_amount || "0");
+      const isRecurring = jobOffer.is_recurring === true;
+      const paymentKind = payment.payment_kind || payment.payment_type;
+
+      // Check for monthly token payments for this user this month
+      const currentPeriod = new Date().toISOString().slice(0, 7); // YYYY-MM
+      let customerTokenAmount = 0;
+      let providerTokenAmount = 0;
+
+      if (isRecurring) {
+        // Check if customer token was charged this month
+        const { data: customerToken } = await supabaseAdmin
+          .from("payments")
+          .select("total_amount")
+          .eq("payer_id", customerId)
+          .eq("payment_kind", "customer_token")
+          .gte("created_at", `${currentPeriod}-01`)
+          .lt("created_at", `${currentPeriod}-32`)
+          .eq("payment_status", "paid")
+          .maybeSingle();
+
+        if (customerToken) {
+          customerTokenAmount = parseFloat(customerToken.total_amount);
+        }
+
+        // Check if provider token was charged this month
+        const { data: providerToken } = await supabaseAdmin
+          .from("payments")
+          .select("total_amount")
+          .eq("payer_id", providerId)
+          .eq("payment_kind", "provider_token")
+          .gte("created_at", `${currentPeriod}-01`)
+          .lt("created_at", `${currentPeriod}-32`)
+          .eq("payment_status", "paid")
+          .maybeSingle();
+
+        if (providerToken) {
+          providerTokenAmount = parseFloat(providerToken.total_amount);
+        }
+      }
 
       const receiptData = {
         receipt_id: payment.payment_id,
         payment_date: payment.paid_at || payment.created_at,
         job_title: jobOffer.offer_title,
         service_date: jobOffer.service_date,
+        is_recurring: isRecurring,
+        payment_kind: paymentKind,
         customer: {
           name: jobOffer.customer.name,
           email: jobOffer.customer.email,
@@ -98,17 +142,23 @@ export const GET = requireAuth(
           platform_fee: parseFloat(payment.platform_fee),
           total_paid: parseFloat(payment.total_amount),
           provider_receives: parseFloat(payment.provider_payout || "0"),
-          cash_amount: cashAmount, // NEW
+          cash_amount: cashAmount,
+          customer_token: customerTokenAmount,
+          provider_token: providerTokenAmount,
           currency: payment.currency,
         },
-        is_cash_payment: isCashPayment, // NEW
+        is_cash_payment: isCashPayment,
         payment_method:
           payment.payment_type === "job_completion"
             ? isCashPayment
               ? "Platform Fee + Cash"
-              : "Online Payment"
-            : payment.payment_type,
-        payment_id: payment.mollie_payment_id || payment.payment_id,
+              : "Stripe Online Payment"
+            : payment.payment_type === "customer_token"
+            ? "Monthly Customer Token"
+            : payment.payment_type === "provider_token"
+            ? "Monthly Provider Token"
+            : "Stripe Payment",
+        payment_id: payment.stripe_payment_intent_id || payment.mollie_payment_id || payment.payment_id,
         status: payment.payment_status,
       };
 
