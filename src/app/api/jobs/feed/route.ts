@@ -11,8 +11,20 @@ export const GET = requireRole('service_provider')(async (request: NextRequest, 
   const limit = parseInt(searchParams.get('limit') || '20')
   const offset = parseInt(searchParams.get('offset') || '0')
   const skill_filter = searchParams.get('skill_filter') || null
+  
+  // Distance filtering params
+  const user_lat = searchParams.get('user_lat') ? parseFloat(searchParams.get('user_lat')!) : null
+  const user_lng = searchParams.get('user_lng') ? parseFloat(searchParams.get('user_lng')!) : null
+  const max_distance = searchParams.get('max_distance') ? parseInt(searchParams.get('max_distance')!) : null
+  
   const { data, error } = await supabaseAdmin.rpc('get_open_job_posts_for_provider', {
-    p_provider_id: user.id, p_limit: limit, p_offset: offset, p_skill_filter: skill_filter
+    p_provider_id: user.id, 
+    p_limit: limit, 
+    p_offset: offset, 
+    p_skill_filter: skill_filter,
+    p_user_lat: user_lat,
+    p_user_lng: user_lng,
+    p_max_distance_km: max_distance
   })
   if (error) {
     console.error('Job feed error:', error)
