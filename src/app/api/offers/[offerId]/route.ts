@@ -146,7 +146,38 @@ export const POST = requireAuth(async (
       ;({ data, error } = await supabaseAdmin.rpc('mark_offer_awaiting_confirmation', { p_offer_id: offerId, p_provider_id: user.id }))
       break
     case 'mark-complete-provider':
-      // offer_status: active → awaiting_confirmation (provider done, waiting customer)
+      // Check token FIRST for recurring jobs (before marking complete)
+      try {
+        const { data: offer } = await supabaseAdmin
+          .from('job_offers')
+          .select('is_recurring, provider_id')
+          .eq('offer_id', offerId)
+          .single()
+        
+        if (offer?.is_recurring && offer.provider_id === user.id) {
+          const tokenStatus = await checkProviderTokenStatus(user.id, offerId)
+          logger.info('Token check before mark-complete', { offerId, status: tokenStatus.status })
+          
+          if (tokenStatus.status === 'pending_checkout') {
+            // Token needed! Don't mark complete yet
+            logger.info('Token payment required - not marking complete yet', { offerId })
+            return new Response(
+              JSON.stringify({ 
+                success: false, 
+                error: 'TOKEN_REQUIRED',
+                token_required: true,
+                provider_token: tokenStatus,
+                message: 'Please pay €5 monthly token first'
+              }), 
+              { status: 402, headers: { 'Content-Type': 'application/json' } }
+            )
+          }
+        }
+      } catch (tokErr: any) {
+        logger.warn('Token check failed before mark-complete', { offerId, error: tokErr.message })
+      }
+      
+      // Token paid or not needed - NOW mark complete
       ;({ data, error } = await supabaseAdmin.rpc('mark_offer_complete_by_provider', { p_offer_id: offerId, p_provider_id: user.id }))
       break
     case 'complete':
@@ -170,26 +201,6 @@ export const POST = requireAuth(async (
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
 
-  // On provider mark-complete of a RECURRING job, check if provider needs to
-  // pay the €5 monthly token. Return status so frontend can show payment modal.
-  // NO automatic charging - frontend must show modal and user confirms payment.
-  let provider_token: Awaited<ReturnType<typeof checkProviderTokenStatus>> | undefined
-  if (action === 'mark-complete-provider') {
-    try {
-      const { data: offer } = await supabaseAdmin
-        .from('job_offers')
-        .select('is_recurring, provider_id')
-        .eq('offer_id', offerId)
-        .single()
-      if (offer?.is_recurring && offer.provider_id === user.id) {
-        provider_token = await checkProviderTokenStatus(user.id, offerId)
-        logger.info('Provider token status checked at mark-complete', { offerId, status: provider_token.status })
-      }
-    } catch (tokErr: any) {
-      logger.warn('Provider token check failed at mark-complete', { offerId, error: tokErr.message })
-    }
-  }
-
-  logger.info('Offer action', { action, offerId, userId: user.id })
-  return new Response(JSON.stringify({ success: true, data, provider_token }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  logger.info('Offer action success', { action, offerId, userId: user.id })
+  return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { 'Content-Type': 'application/json' } })
 })
