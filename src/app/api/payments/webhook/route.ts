@@ -90,31 +90,68 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       ? session.payment_intent
       : session.payment_intent?.id;
   const paymentId = session.metadata?.payment_id;
+  
+  logger.info("💳 Checkout session completed", {
+    sessionId: session.id,
+    paymentId,
+    metadata: session.metadata,
+    hasPaymentIntent: !!piId,
+  });
+  
   if (!paymentId) {
-    logger.warn("Checkout completed without payment_id metadata", { session: session.id });
+    logger.warn("⚠️ Checkout completed without payment_id metadata", { 
+      sessionId: session.id,
+      metadata: session.metadata 
+    });
     return;
   }
 
   const fee = piId ? await getActualFeeFromPaymentIntent(piId) : null;
   const charge =
     piId && (await stripe.paymentIntents.retrieve(piId)).latest_charge;
-  await supabaseAdmin.rpc("update_stripe_payment_status", {
-    p_payment_id: paymentId,
-    p_stripe_status: "succeeded",
-    p_payment_intent_id: piId ?? null,
-    p_charge_id: (charge as string) ?? null,
-    p_stripe_fee: fee,
+  
+  logger.info("📝 Updating payment status", {
+    paymentId,
+    stripeStatus: "succeeded",
+    paymentIntentId: piId,
+    chargeId: charge,
+    fee,
   });
+  
+  try {
+    await supabaseAdmin.rpc("update_stripe_payment_status", {
+      p_payment_id: paymentId,
+      p_stripe_status: "succeeded",
+      p_payment_intent_id: piId ?? null,
+      p_charge_id: (charge as string) ?? null,
+      p_stripe_fee: fee,
+    });
+    logger.info("✅ Payment status updated successfully", { paymentId });
+  } catch (dbError: any) {
+    logger.error("❌ Database update failed", {
+      paymentId,
+      error: dbError.message,
+      stack: dbError.stack,
+    });
+    throw dbError;
+  }
 
   // Handle provider_token payment completion
   const offerId = session.metadata?.offer_id;
   const paymentKind = session.metadata?.payment_kind;
   
+  logger.info("🔍 Checking payment kind", {
+    paymentKind,
+    offerId,
+    period: session.metadata?.period,
+  });
+  
   if (paymentKind === "provider_token" && paymentId) {
     logger.info("✅ Provider token checkout completed", { 
       paymentId, 
       offerId,
-      period: session.metadata?.period 
+      period: session.metadata?.period,
+      userId: session.metadata?.user_id,
     });
     // Payment status already updated above via update_stripe_payment_status
     // Frontend will retry mark-complete after WebView returns
@@ -122,7 +159,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   
   // Handle recurring job payment completion (customer pays €15 + job amount)
   if (offerId && paymentKind === "recurring_job") {
-    logger.info("Marking offer as completed after recurring job payment", { offerId, paymentId });
+    logger.info("✅ Recurring job payment - marking offer as completed", { offerId, paymentId });
     
     await supabaseAdmin
       .from("offers")
