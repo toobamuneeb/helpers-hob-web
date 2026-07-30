@@ -42,8 +42,8 @@ export async function checkProviderTokenStatus(
     .from("payments")
     .select("payment_id, payment_status")
     .eq("payer_id", providerId)
-    .eq("payment_type", "provider_token")
-    .eq("payment_period", period)
+    .eq("payment_kind", "provider_token")
+    .eq("period", period)
     .in("payment_status", ["paid", "succeeded"])
     .maybeSingle();
   

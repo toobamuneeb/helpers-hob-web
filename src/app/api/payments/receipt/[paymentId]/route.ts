@@ -149,14 +149,16 @@ export const GET = requireAuth(
         },
         is_cash_payment: isCashPayment,
         payment_method:
-          payment.payment_type === "job_completion"
+          paymentKind === "job_completion" || paymentKind === "one_time"
             ? isCashPayment
               ? "Platform Fee + Cash"
               : "Stripe Online Payment"
-            : payment.payment_type === "customer_token"
+            : paymentKind === "customer_token"
             ? "Monthly Customer Token"
-            : payment.payment_type === "provider_token"
+            : paymentKind === "provider_token"
             ? "Monthly Provider Token"
+            : paymentKind === "recurring_job"
+            ? "Recurring Job Payment"
             : "Stripe Payment",
         payment_id: payment.stripe_payment_intent_id || payment.mollie_payment_id || payment.payment_id,
         status: payment.payment_status,
