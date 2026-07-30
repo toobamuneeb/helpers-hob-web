@@ -35,6 +35,33 @@ export async function checkProviderTokenStatus(
 ): Promise<TokenChargeResult> {
   const period = currentPeriod();
 
+  // FIRST: Check payment history - if already paid this month, allow it
+  logger.info('Checking provider token payment history', { providerId, period });
+  
+  const { data: existingPayment } = await supabaseAdmin
+    .from("payments")
+    .select("payment_id, payment_status")
+    .eq("payer_id", providerId)
+    .eq("payment_type", "provider_token")
+    .eq("payment_period", period)
+    .in("payment_status", ["paid", "succeeded"])
+    .maybeSingle();
+  
+  if (existingPayment) {
+    logger.info('✅ Provider already paid token this month', {
+      providerId,
+      period,
+      paymentId: existingPayment.payment_id,
+    });
+    return { 
+      status: "already_paid", 
+      instant: true, 
+      paymentId: existingPayment.payment_id 
+    };
+  }
+
+  logger.info('No existing payment found, checking with record_token_payment', { providerId, period });
+
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("stripe_customer_id, name, email")
@@ -63,10 +90,12 @@ export async function checkProviderTokenStatus(
   });
   
   if (rec?.already_paid) {
+    logger.info('Token already paid per record_token_payment', { paymentId: rec.payment_id });
     return { status: "already_paid", instant: true, paymentId: rec.payment_id };
   }
   
   // Token needed - return pending status so frontend shows payment modal
+  logger.info('Token payment needed', { paymentId: rec?.payment_id });
   return {
     status: "pending_checkout",
     instant: false,

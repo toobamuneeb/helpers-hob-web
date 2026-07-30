@@ -166,7 +166,7 @@ export const POST = requireAuth(async (
                 success: false, 
                 error: 'TOKEN_REQUIRED',
                 token_required: true,
-                provider_token: tokenStatus,
+                provider_token: tokenStatus,  // Include full token data
                 message: 'Please pay €5 monthly token first'
               }), 
               { status: 402, headers: { 'Content-Type': 'application/json' } }
