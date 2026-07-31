@@ -13,6 +13,11 @@ const updateProfileSchema = z.object({
   state:             z.string().min(2).max(100),
   zip:               z.string().min(2).max(20),
   profile_image_url: z.string().url().optional().nullable(),
+  // Location fields for service providers
+  location_address:  z.string().optional().nullable(),
+  location_lat:      z.number().optional().nullable(),
+  location_lng:      z.number().optional().nullable(),
+  city:              z.string().optional().nullable(),
 })
 
 export const POST = requireAuth(async (request: NextRequest, user) => {
@@ -30,7 +35,7 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
       )
     }
 
-    const { name, phone, country, state, zip, profile_image_url } = validation.data
+    const { name, phone, country, state, zip, profile_image_url, location_address, location_lat, location_lng, city } = validation.data
 
     const { data: result, error } = await supabaseAdmin.rpc('update_profile', {
       p_user_id:           user.id,
@@ -40,6 +45,10 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
       p_state:             state,
       p_zip:               zip,
       p_profile_image_url: profile_image_url ?? null,
+      p_location_address:  location_address ?? null,
+      p_location_lat:      location_lat ?? null,
+      p_location_lng:      location_lng ?? null,
+      p_city:              city ?? null,
     })
 
     if (error) {

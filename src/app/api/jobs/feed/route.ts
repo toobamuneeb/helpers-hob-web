@@ -35,6 +35,13 @@ export const GET = requireRole('service_provider')(async (request: NextRequest, 
     p_user_lng: user_lng,
     p_max_distance_km: max_distance
   })
+  
+  console.log('📊 RPC response:', {
+    jobCount: data?.length,
+    distances: data?.map((j: any) => ({ id: j.job_id.slice(0, 8), distance_km: j.distance_km })),
+    error: error?.message,
+  });
+  
   if (error) {
     console.error('Job feed error:', error)
     return new Response(JSON.stringify({ error: 'Failed to fetch feed', details: error.message, code: error.code }), { status: 500, headers: { 'Content-Type': 'application/json' } })
