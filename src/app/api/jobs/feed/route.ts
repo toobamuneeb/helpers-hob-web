@@ -17,6 +17,15 @@ export const GET = requireRole('service_provider')(async (request: NextRequest, 
   const user_lng = searchParams.get('user_lng') ? parseFloat(searchParams.get('user_lng')!) : null
   const max_distance = searchParams.get('max_distance') ? parseInt(searchParams.get('max_distance')!) : null
   
+  console.log('🔍 Job feed request params:', {
+    user_lat,
+    user_lng,
+    max_distance,
+    skill_filter,
+    limit,
+    offset,
+  });
+  
   const { data, error } = await supabaseAdmin.rpc('get_open_job_posts_for_provider', {
     p_provider_id: user.id, 
     p_limit: limit, 
