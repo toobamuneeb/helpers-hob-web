@@ -40,6 +40,9 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
 
   const v = validateRequest(schema, await request.json());
   if (!v.success) return json({ error: v.error }, 400);
+  
+  const { offer_id, mandate_id } = v.data;
+  const wantsNewCard = mandate_id === undefined; // If mandate_id undefined, user wants new card
 
   try {
     // ── Offer ────────────────────────────────────────────────────────────
@@ -102,9 +105,11 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
       customerId,
       hasDefaultPm: !!defaultPm,
       defaultPm,
+      wantsNewCard,
+      mandateId: mandate_id,
       isRecurring,
-      willUseCheckout: !defaultPm,
-      willUseSavedCard: !!defaultPm,
+      willUseCheckout: !defaultPm || wantsNewCard,
+      willUseSavedCard: !!defaultPm && !wantsNewCard,
     });
 
     const period = currentPeriod();
@@ -320,8 +325,8 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
       payment_kind: kind,
     };
 
-    // ── Saved card → charge off-session now ──────────────────────────────
-    if (defaultPm) {
+    // ── Saved card → charge off-session now (ONLY if user didn't explicitly request new card) ──
+    if (defaultPm && !wantsNewCard) {
       logger.info("Attempting off-session charge with saved card", { defaultPm, paymentId });
       
       try {

@@ -11,7 +11,7 @@ import { validateRequest } from '@/lib/validation'
 import { checkProviderTokenStatus } from '@/lib/tokens'
 
 const actionSchema = z.object({
-  action: z.enum(['accept', 'reject', 'start', 'mark-awaiting', 'mark-complete-provider', 'complete', 'cancel', 'mark-not-completed']),
+  action: z.enum(['accept', 'reject', 'start', 'mark-awaiting', 'mark-complete-provider', 'complete', 'cancel', 'mark-not-completed', 'request-cancel-recurring']),
   reason: z.string().optional(),
   cancel_series: z.boolean().optional().default(false),
 })
@@ -194,6 +194,52 @@ export const POST = requireAuth(async (
         p_reason: reason, p_cancel_series: cancel_series
       }))
       break
+    case 'request-cancel-recurring': {
+      // Recurring series are not stopped directly by either party — the request
+      // is queued for an admin. Nothing about the series changes until then.
+      const { data: offer, error: offerErr } = await supabaseAdmin
+        .from('job_offers')
+        .select('offer_id, parent_offer_id, customer_id, provider_id, is_recurring')
+        .eq('offer_id', offerId)
+        .maybeSingle()
+
+      if (offerErr) { error = offerErr; break }
+      if (!offer) {
+        return new Response(JSON.stringify({ error: 'Offer not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } })
+      }
+      if (!offer.is_recurring) {
+        return new Response(JSON.stringify({ error: 'This booking is not part of a recurring series' }), { status: 400, headers: { 'Content-Type': 'application/json' } })
+      }
+      if (offer.customer_id !== user.id && offer.provider_id !== user.id) {
+        return new Response(JSON.stringify({ error: 'Not a party to this booking' }), { status: 403, headers: { 'Content-Type': 'application/json' } })
+      }
+
+      // Always key the request to the master so both parties, from any
+      // occurrence, act on the same series.
+      const masterId = offer.parent_offer_id ?? offer.offer_id
+
+      const { data: created, error: insErr } = await supabaseAdmin
+        .from('recurring_cancel_requests')
+        .insert({
+          master_offer_id: masterId,
+          requested_by: user.id,
+          requester_role: user.role,
+          reason: reason ?? null,
+        })
+        .select('request_id, status, created_at')
+        .single()
+
+      if (insErr) {
+        // Partial unique index on (master_offer_id) WHERE status = 'pending'.
+        if (insErr.code === '23505') {
+          return new Response(JSON.stringify({ error: 'A cancellation request for this series is already awaiting review' }), { status: 409, headers: { 'Content-Type': 'application/json' } })
+        }
+        error = insErr
+        break
+      }
+      data = created
+      break
+    }
   }
 
   if (error) {

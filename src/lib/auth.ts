@@ -80,7 +80,26 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthUse
   }
 }
 
-export function requireAuth<T = any>(handler: (request: NextRequest, user: AuthUser, context?: T) => Promise<Response>) {
+// ── Account status gate ─────────────────────────────────────────────────────
+// `incomplete` is deliberately NOT blocked: those users have confirmed their
+// email but still need to reach profile creation. Everything else here is an
+// account that must not transact until an admin acts.
+const BLOCKED_STATUSES: Record<string, { code: string; error: string }> = {
+  pending: {
+    code: 'ACCOUNT_PENDING_APPROVAL',
+    error: 'Your account is waiting for approval. You will be notified once it is reviewed.',
+  },
+  suspended: {
+    code: 'ACCOUNT_SUSPENDED',
+    error: 'Your account has been suspended. Please contact support.',
+  },
+}
+
+export function requireAuth<T = any>(
+  handler: (request: NextRequest, user: AuthUser, context?: T) => Promise<Response>,
+  /** Escape hatch for routes an unapproved account must still reach. */
+  options?: { allowUnapproved?: boolean },
+) {
   return async (request: NextRequest, context?: T) => {
     const user = await authenticateRequest(request)
     
@@ -89,6 +108,23 @@ export function requireAuth<T = any>(handler: (request: NextRequest, user: AuthU
         JSON.stringify({ error: 'Authentication required' }),
         { 
           status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
+    // Gate here rather than per-route so a new endpoint is closed by default.
+    const blocked = BLOCKED_STATUSES[user.profile_status]
+    if (blocked && !options?.allowUnapproved) {
+      console.warn('\u26D4 Blocked request from', user.profile_status, 'account:', user.id)
+      return new Response(
+        JSON.stringify({
+          error: blocked.error,
+          code: blocked.code,
+          profile_status: user.profile_status,
+        }),
+        {
+          status: 403,
           headers: { 'Content-Type': 'application/json' }
         }
       )
