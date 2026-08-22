@@ -24,3 +24,70 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ---------------------------------------------------------------------------
+   HelpersHob web app tokens — mirrored from the mobile app's palette:
+   HelpersHob/src/utils/theme.tsx → COLORS
+
+   Appended, not replaced: /bank-details and /payment/* are loaded inside the
+   mobile app's WebViews and must keep rendering exactly as they do today.
+   Nothing above this line is touched.
+--------------------------------------------------------------------------- */
+
+@theme {
+  /* Role accent — customer default. Providers override these below.
+     Literal values, NOT var() references: a custom property declared as
+     `--a: var(--b)` is resolved where it is DECLARED (here, :root), so a
+     deeper override of --b would never reach it. */
+  --color-accent-role: #4aa224;  /* COLORS.primary */
+  --color-accent-soft: #eefff2;  /* COLORS.secondarybase */
+  --color-accent-tint: #d7eedc;  /* COLORS.textinput */
+  --color-accent-on: #000000;    /* mobile uses staticBlack on green */
+
+  --color-brand: #4aa224;        /* COLORS.primary    — identity, accents */
+  --color-brand-deep: #0a7129;   /* COLORS.buttonbase — solid controls (AA on white) */
+  --color-brand-soft: #eefff2;   /* COLORS.secondarybase */
+  --color-brand-tint: #d7eedc;   /* COLORS.textinput */
+  --color-brand-pale: #ddfecf;   /* COLORS.highLightGreen */
+
+  --color-accent: #2d7863;       /* COLORS.base */
+  --color-secondary: #0064a0;    /* COLORS.secondary */
+  --color-warm: #fff4ed;         /* COLORS.highlight */
+  --color-warm-deep: #ffefe4;    /* COLORS.highLightColor */
+  --color-danger: #f14d4d;       /* COLORS.error_Red50 */
+  --color-dark-green: #618368;   /* COLORS.darkGreen — outline button text/border */
+
+  /* COLORS.neutralGrey* — grey-green, not blue. ink-50 is decorative only. */
+  --color-ink: #25292a;
+  --color-ink-80: #51595a;
+  --color-ink-70: #626d6f;
+  --color-ink-50: #8d9a9b;
+  --color-line: #d8dfe0;
+  --color-line-soft: #e9edee;
+
+  --color-canvas: #f5f8f6;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f5f2;
+
+  --font-public: var(--font-public-sans);
+
+  /* Small phones. Tailwind starts at sm (640px), which leaves 360–430px
+     screens — most of the traffic — with no step of their own. */
+  --breakpoint-xs: 27.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Provider accent.
+
+   The mobile app themes by role in 9+ places, always the same way:
+       const accentColor = isProvider ? COLORS.secondary : COLORS.primary;
+
+   Overriding the same variables the utilities read means every accent-* class
+   follows whoever is signed in — no `isProvider ?` scattered through the UI.
+--------------------------------------------------------------------------- */
+[data-role='service_provider'] {
+  --color-accent-role: #0064a0;  /* COLORS.secondary */
+  --color-accent-soft: #e6f1f8;
+  --color-accent-tint: #b8d6e8;
+  --color-accent-on: #ffffff;    /* white is needed on the darker blue */
+}
