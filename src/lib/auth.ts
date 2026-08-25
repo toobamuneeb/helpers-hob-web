@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string
   role: 'customer' | 'service_provider'
   profile_status: 'incomplete' | 'pending' | 'verified' | 'suspended'
+  is_deleted: boolean
 }
 
 export async function authenticateRequest(request: NextRequest): Promise<AuthUser | null> {
@@ -52,7 +53,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthUse
     // Fetch profile
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, email, role, profile_status')
+      .select('user_id, email, role, profile_status, is_deleted')
       .eq('user_id', userId)
       .eq('is_deleted', false)
       .single()
@@ -73,6 +74,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthUse
       email: profile.email,
       role: profile.role,
       profile_status: profile.profile_status,
+      is_deleted: profile.is_deleted === true,
     }
   } catch (err) {
     console.error('❌ Auth exception:', err)
@@ -114,6 +116,21 @@ export function requireAuth<T = any>(
     }
 
     // Gate here rather than per-route so a new endpoint is closed by default.
+    // A removed account keeps its rows so the other party's bookings and
+    // payments stay whole, but it must not be able to act. The flag is the gate,
+    // and it outranks profile_status — including the allowUnapproved escape
+    // hatch, which exists for accounts on their way in, not on their way out.
+    if (user.is_deleted) {
+      console.warn('\u26D4 Blocked request from removed account:', user.id)
+      return new Response(
+        JSON.stringify({
+          error: 'This account has been removed. Please contact support.',
+          code: 'ACCOUNT_REMOVED',
+        }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } },
+      )
+    }
+
     const blocked = BLOCKED_STATUSES[user.profile_status]
     if (blocked && !options?.allowUnapproved) {
       console.warn('\u26D4 Blocked request from', user.profile_status, 'account:', user.id)

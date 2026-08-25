@@ -9,7 +9,9 @@ import { resendOtp, verifyOtp } from '@/lib/web/auth'
 import { useSession } from '@/lib/web/session'
 import { Button, ErrorNote } from '@/components/web/ui'
 
-const LENGTH = 6
+// Supabase is configured for 8-digit codes here — the mobile SignupVerification
+// screens render numberOfDigits={8} against the same project.
+const LENGTH = 8
 
 /** Six-box OTP entry, mirroring the mobile CustomOTPInput. */
 function OtpBoxes({
@@ -36,12 +38,13 @@ function OtpBoxes({
         className="absolute inset-0 z-10 h-full w-full cursor-default opacity-0"
         aria-label="Verification code"
       />
-      <div className="flex justify-between gap-2">
+      {/* Eight boxes need a tighter gap than six to stay on one line on a phone. */}
+      <div className="flex justify-between gap-1.5 sm:gap-2">
         {Array.from({ length: LENGTH }).map((_, i) => (
           <span
             key={i}
             onClick={() => ref.current?.focus()}
-            className={`flex h-14 flex-1 items-center justify-center rounded-xl border text-xl font-bold text-ink transition-colors ${
+            className={`flex h-12 min-w-0 flex-1 items-center justify-center rounded-lg border text-lg font-bold text-ink transition-colors sm:h-14 sm:rounded-xl sm:text-xl ${
               value.length === i ? 'border-brand ring-1 ring-brand' : 'border-line'
             }`}
           >

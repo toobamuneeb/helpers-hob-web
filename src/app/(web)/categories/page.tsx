@@ -40,9 +40,18 @@ export default function CategoriesPage() {
             {shown.map((s) => (
               <Link key={s.id} href={`/providers?skill=${s.id}&name=${encodeURIComponent(s.name)}`}
                 className="flex flex-col items-center gap-2 rounded-lg border border-line bg-surface p-4 text-center transition-colors hover:border-accent-role">
+                {/* skills.icon is a URL, and the mobile Home tile draws it on the
+                    category colour — same here. A user-managed storage URL, so a
+                    plain <img> that falls back to the initial if it will not load. */}
                 <span className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold"
                   style={{ backgroundColor: s.color ?? '#EEFFF2' }}>
-                  {s.name.slice(0, 1).toUpperCase()}
+                  {s.icon ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={s.icon} alt="" width={24} height={24} className="object-contain"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                  ) : (
+                    s.name.slice(0, 1).toUpperCase()
+                  )}
                 </span>
                 <span className="text-sm font-semibold text-ink">{s.name}</span>
               </Link>

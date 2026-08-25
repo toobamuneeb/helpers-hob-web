@@ -19,6 +19,7 @@ export interface Profile {
   zip: string | null
   profile_image_url: string | null
   profile_status: ProfileStatus
+  is_deleted: boolean | null
   introduction: string | null
   id_card_front_url: string | null
   id_card_back_url: string | null
@@ -133,6 +134,9 @@ export function useSession(): SessionValue {
  */
 export function routeForProfile(profile: Profile | null): string | null {
   if (!profile) return '/login'
+  // Checked before profile_status: a removed account keeps whatever status it
+  // had, and the API refuses it whatever that status says.
+  if (profile.is_deleted) return '/removed'
   if (profile.profile_status === 'incomplete') {
     return profile.role === 'customer' ? '/create-profile' : '/provider/create-profile'
   }

@@ -14,6 +14,7 @@ export default function ImagePicker({
   value,
   onChange,
   label,
+  required,
   hint,
   shape = 'circle',
   error,
@@ -21,6 +22,7 @@ export default function ImagePicker({
   value: File | null
   onChange: (file: File | null) => void
   label: string
+  required?: boolean
   hint?: string
   shape?: 'circle' | 'card'
   error?: string
@@ -50,7 +52,10 @@ export default function ImagePicker({
 
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-semibold text-ink-80">{label}</label>
+      <label className="mb-1.5 block text-sm font-semibold text-ink-80">
+        {label}
+        {required && <span className="ml-0.5 text-danger">*</span>}
+      </label>
 
       <button
         type="button"

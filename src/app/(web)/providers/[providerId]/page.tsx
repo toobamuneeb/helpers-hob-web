@@ -4,6 +4,7 @@ import { use, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/web/api'
+import { useSession } from '@/lib/web/session'
 import {
   Avatar, BackLink, Button, Card, Empty, ErrorNote, Spinner, date,
 } from '@/components/web/ui'
@@ -40,6 +41,7 @@ export default function ProviderProfilePage({
   params,
 }: { params: Promise<{ providerId: string }> }) {
   const { providerId } = use(params)
+  const { profile } = useSession()
   const router = useRouter()
 
   const [provider, setProvider] = useState<ProviderProfile | null>(null)
@@ -77,7 +79,10 @@ export default function ProviderProfilePage({
   async function startChat() {
     if (!provider) return
     setStarting(true)
+    // /api/chat/create is not auth-guarded, so it cannot infer either side —
+    // both ids have to be sent, and the signed-in customer is this one.
     const res = await api.post<{ chat_id?: string }>('/chat/create', {
+      customer_id: profile?.user_id,
       service_provider_id: provider.user_id,
     })
     if (res.success && res.data?.chat_id) router.push(`/chats/${res.data.chat_id}`)

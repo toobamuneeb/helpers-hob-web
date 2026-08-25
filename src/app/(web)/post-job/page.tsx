@@ -114,6 +114,9 @@ function PostJobForm() {
     setError(null)
 
     if (!form.skillId) return setError('Please choose a category')
+    // Required on the web even though the mobile screen lets it through — a job
+    // with no picture is far harder for a provider to price.
+    if (!photo) return setError('Please add a photo of the job')
     if (!location) return setError('Please pick an address from the suggestions')
     if (!form.date || !form.time) return setError('Please pick a date and time')
     if (serviceAmount <= 0) return setError('Please enter an hourly rate')
@@ -124,7 +127,8 @@ function PostJobForm() {
     try {
       let imageUrl: string | undefined
       if (photo) {
-        const up = await uploadImage(photo, 'jobs', `${profile.user_id}_job_${Date.now()}`)
+        // 'job-images', not 'jobs' — the bucket the mobile AddServiceDetail uploads to.
+        const up = await uploadImage(photo, 'job-images', `${profile.user_id}_job_${Date.now()}`)
         if (up.error) { setError(up.error); setBusy(false); return }
         imageUrl = up.url
       }
@@ -214,7 +218,7 @@ function PostJobForm() {
                 placeholder="Describe the work so providers can quote accurately…" className={INPUT_CLASS} />
             </Field>
 
-            <ImagePicker label="Photo (optional)" value={photo} onChange={setPhoto} shape="card"
+            <ImagePicker label="Photo" required value={photo} onChange={setPhoto} shape="card"
               hint="A picture helps providers understand the job." />
           </div>
         </Card>

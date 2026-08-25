@@ -27,6 +27,21 @@ export async function signUp(
 ): Promise<AuthResult> {
   const supabase = getBrowserSupabase()
 
+  // Catch the common case early so the message can name the role they signed up
+  // as. This only sees marketplace accounts — staff live in admin_users — so it
+  // is a courtesy, not the check that makes this safe.
+  const { data: existing } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('email', email)
+    .eq('is_deleted', false)
+    .maybeSingle()
+
+  if (existing) {
+    const as = existing.role === 'customer' ? 'a customer' : 'a service provider'
+    return { success: false, error: `An account with this email already exists as ${as}. Sign in instead.` }
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -35,6 +50,17 @@ export async function signUp(
   if (error) return { success: false, error: error.message }
   if (!data.user) return { success: false, error: 'Signup failed' }
 
+  // When the email is already registered, Supabase does not error — it returns a
+  // decoy user with no identities, so an attacker cannot use signup to discover
+  // who has an account. That decoy's id is not in auth.users, so inserting a
+  // profile for it fails on profiles_user_id_fkey. Read the signal instead.
+  if ((data.user.identities?.length ?? 0) === 0) {
+    return {
+      success: false,
+      error: 'An account with this email already exists. Sign in instead, or use a different email.',
+    }
+  }
+
   // 'pending' here means "email not confirmed yet" — verifyOtp moves it on.
   const { error: profileError } = await supabase.from('profiles').insert({
     user_id: data.user.id,
@@ -42,7 +68,13 @@ export async function signUp(
     role,
     profile_status: 'pending',
   })
-  if (profileError) return { success: false, error: profileError.message }
+  if (profileError) {
+    // Anything left that trips the foreign key is the same underlying cause.
+    if (profileError.message.includes('profiles_user_id_fkey')) {
+      return { success: false, error: 'This email is already in use. Sign in instead, or use a different email.' }
+    }
+    return { success: false, error: profileError.message }
+  }
 
   return { success: true, userId: data.user.id }
 }

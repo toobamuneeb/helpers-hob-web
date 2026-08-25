@@ -72,8 +72,10 @@ function JobPost({ jobId }: { jobId: string }) {
   async function message() {
     if (!job?.customer) return
     setBusy(true)
+    // Both ids, for the same reason: the route takes no session.
     const res = await api.post<{ chat_id?: string }>('/chat/create', {
       customer_id: job.customer.user_id,
+      service_provider_id: profile?.user_id,
       job_id: job.job_id,
       job_title: job.job_title ?? undefined,
     })

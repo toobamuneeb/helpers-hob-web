@@ -14,7 +14,7 @@ const PUBLIC_ROUTES = [
 ]
 
 const GATE_ROUTES = [
-  '/create-profile', '/provider/create-profile', '/pending-approval', '/suspended',
+  '/create-profile', '/provider/create-profile', '/pending-approval', '/suspended', '/removed',
 ]
 
 const ICONS: Record<string, string> = {
