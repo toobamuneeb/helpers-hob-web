@@ -1,4 +1,5 @@
 import { getBrowserSupabase } from '@/lib/supabase-browser'
+import { setVerifyingSignIn } from './auth-gate'
 import type { UserRole } from './session'
 
 /**
@@ -21,19 +22,29 @@ export interface AuthResult {
 }
 
 export async function signUp(
-  email: string,
+  input: string,
   password: string,
   role: UserRole,
 ): Promise<AuthResult> {
   const supabase = getBrowserSupabase()
 
+  // Store one canonical form, so the profile row and every later lookup agree
+  // on what this address is.
+  const email = input.trim().toLowerCase()
+
   // Catch the common case early so the message can name the role they signed up
   // as. This only sees marketplace accounts — staff live in admin_users — so it
   // is a courtesy, not the check that makes this safe.
+  //
+  // Matched case-insensitively on purpose: an .eq() here misses an account
+  // stored as ammar@gmail.com when someone types Ammar@Gmail.com, and the
+  // signup then falls through to the generic "already exists" message instead
+  // of naming the role. Wildcards are escaped because ilike treats % and _ as
+  // patterns, and an address is allowed to contain them.
   const { data: existing } = await supabase
     .from('profiles')
     .select('role')
-    .eq('email', email)
+    .ilike('email', email.replace(/[%_\\]/g, '\\$&'))
     .eq('is_deleted', false)
     .maybeSingle()
 
@@ -117,44 +128,52 @@ export async function signIn(
 ): Promise<AuthResult> {
   const supabase = getBrowserSupabase()
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  // Held for the whole function: Supabase announces SIGNED_IN as soon as the
+  // password is accepted, and the session provider must not act on that until
+  // the role below has been checked. See auth-gate.
+  setVerifyingSignIn(true)
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-  if (error) {
-    // Same recovery path as mobile: unconfirmed accounts get a fresh OTP
-    // instead of a dead end.
-    if (/not confirmed/i.test(error.message)) {
-      await resendOtp(email)
-      return { success: false, emailNotConfirmed: true, error: error.message }
+    if (error) {
+      // Same recovery path as mobile: unconfirmed accounts get a fresh OTP
+      // instead of a dead end.
+      if (/not confirmed/i.test(error.message)) {
+        await resendOtp(email)
+        return { success: false, emailNotConfirmed: true, error: error.message }
+      }
+      return { success: false, error: error.message }
     }
-    return { success: false, error: error.message }
-  }
-  if (!data.user) return { success: false, error: 'Login failed' }
+    if (!data.user) return { success: false, error: 'Login failed' }
 
-  if (!data.user.email_confirmed_at) {
-    await resendOtp(email)
-    return { success: false, emailNotConfirmed: true }
-  }
+    if (!data.user.email_confirmed_at) {
+      await resendOtp(email)
+      return { success: false, emailNotConfirmed: true }
+    }
 
-  // The two sides have separate sign-in pages; landing on the wrong one would
-  // otherwise drop the user into an app built for the other role.
-  if (expectedRole) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('user_id', data.user.id)
-      .maybeSingle()
+    // The two sides have separate sign-in pages; landing on the wrong one would
+    // otherwise drop the user into an app built for the other role.
+    if (expectedRole) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .maybeSingle()
 
-    if (profile && profile.role !== expectedRole) {
-      await supabase.auth.signOut()
-      const actual = profile.role === 'customer' ? 'customer' : 'service provider'
-      return {
-        success: false,
-        error: `This account is registered as a ${actual}. Please sign in from the ${actual} page.`,
+      if (profile && profile.role !== expectedRole) {
+        await supabase.auth.signOut()
+        const actual = profile.role === 'customer' ? 'customer' : 'service provider'
+        return {
+          success: false,
+          error: `This account is registered as a ${actual}. Please sign in from the ${actual} page.`,
+        }
       }
     }
-  }
 
-  return { success: true, userId: data.user.id }
+    return { success: true, userId: data.user.id }
+  } finally {
+    setVerifyingSignIn(false)
+  }
 }
 
 export async function sendPasswordResetOtp(

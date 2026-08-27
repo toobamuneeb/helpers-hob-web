@@ -8,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from '@/lib/web/auth'
 import { useSession } from '@/lib/web/session'
 import type { UserRole } from '@/lib/web/session'
-import { Button, ErrorNote, Field, INPUT_CLASS } from '@/components/web/ui'
+import { Button, ErrorNote, Field, INPUT_CLASS, PasswordInput } from '@/components/web/ui'
 
 function LoginForm() {
   const router = useRouter()
@@ -74,13 +74,10 @@ function LoginForm() {
           </Field>
 
           <Field label="Password" required>
-            <input
-              type="password"
+            <PasswordInput
               required
-              autoComplete="current-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={INPUT_CLASS}
+              onChange={setPassword}
             />
           </Field>
 

@@ -52,7 +52,37 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
   const [note, setNote] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    const res = await api.get<Preview>(`/payments/preview${api.qs({ offer_id: offerId })}`)
+    // /payments/preview prices a job from its numbers, not from an offer id —
+    // it reads amount, isRecurring and payThroughPlatform off the query string
+    // and answers "Invalid amount" to anything else. That is the same call the
+    // mobile app makes; the offer has to be fetched first to fill it in.
+    const offer = await api.get<{
+      payment_amount?: number
+      is_recurring?: boolean
+      pay_through_platform?: boolean
+    }>(`/offers/${offerId}`)
+
+    if (!offer.success || !offer.data) {
+      setError(offer.error ?? 'Could not load this job')
+      setLoading(false)
+      return
+    }
+
+    const amount = Number(offer.data.payment_amount ?? 0)
+    if (!amount) {
+      setError('This job has no amount to pay.')
+      setLoading(false)
+      return
+    }
+
+    const res = await api.get<Preview>(
+      `/payments/preview${api.qs({
+        amount,
+        isRecurring: offer.data.is_recurring === true,
+        // Only an explicit false means cash; anything else is the platform.
+        payThroughPlatform: offer.data.pay_through_platform !== false,
+      })}`,
+    )
     if (res.success && res.data) { setPreview(res.data); setError(null) }
     else setError(res.error ?? 'Could not load the payment details')
     setLoading(false)

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { AuthChangeEvent } from '@supabase/supabase-js'
 import { getBrowserSupabase } from '@/lib/supabase-browser'
+import { isVerifyingSignIn } from './auth-gate'
 
 export type UserRole = 'customer' | 'service_provider'
 export type ProfileStatus = 'incomplete' | 'pending' | 'verified' | 'suspended'
@@ -92,6 +93,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (event === 'SIGNED_OUT') {
         setProfile(null)
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Sign-in fires this before the role has been checked. Loading here
+        // would let the shell redirect into the wrong side of the app; signIn
+        // refreshes on its own once the account is cleared.
+        if (isVerifyingSignIn()) return
         void load()
       }
     })

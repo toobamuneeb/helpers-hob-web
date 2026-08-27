@@ -3,12 +3,20 @@
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+import { api } from '@/lib/web/api';
+
 /**
  * Stripe Connect callback page for React Native WebView
  * 
  * This page is loaded in the RN WebView after Stripe onboarding completes.
  * The WebView intercepts URLs containing '/bank-details' and closes itself,
  * then the app re-checks the Stripe status via API.
+ *
+ * A browser is the other caller, and nothing closes for it — Stripe sends web
+ * providers here too. So the page also re-checks the status itself (that route
+ * reads the live account from Stripe and writes the fresh flags back), and
+ * offers a way back into the app rather than telling someone in a normal tab
+ * to wait for a window that will never close.
  * 
  * Query params:
  * - status: 'success' | 'return' | 'refresh' | 'error' | 'cancelled'
@@ -23,6 +31,15 @@ function BankDetailsContent() {
   const provider = searchParams.get('provider') || 'stripe';
   const accountId = searchParams.get('account_id');
   const message = searchParams.get('message');
+
+  // Ask the server to reconcile with Stripe, so whatever the provider sees when
+  // they land back on the payouts screen is the real state of the account. The
+  // WebView closes this page before it renders, so in practice this only ever
+  // runs in a browser — and a redundant GET would be harmless anyway.
+  useEffect(() => {
+    if (status !== 'return' && status !== 'success') return;
+    void api.get('/providers/stripe-status');
+  }, [status]);
 
   useEffect(() => {
     console.log('🔵 Bank details callback page loaded:', {
@@ -113,9 +130,15 @@ function BankDetailsContent() {
             </div>
           )}
 
+          <a
+            href="/provider/payouts"
+            className="mt-2 inline-block rounded-lg bg-[#2E7D32] px-6 py-2.5 text-sm font-semibold text-white"
+          >
+            Go to your payment account
+          </a>
+
           <div className="text-sm text-gray-500 mt-8">
-            <p>This window will close automatically...</p>
-            <p className="mt-2">If it doesn't close, you can safely close it manually.</p>
+            <p>If you started this from the app, this window closes on its own.</p>
           </div>
         </div>
       </div>

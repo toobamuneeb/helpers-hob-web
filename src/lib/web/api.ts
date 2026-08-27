@@ -1,3 +1,5 @@
+import { getBrowserSupabase } from '@/lib/supabase-browser'
+
 
 export interface ApiResponse<T = unknown> {
   success: boolean
@@ -8,16 +10,43 @@ export interface ApiResponse<T = unknown> {
   code?: string
 }
 
+/**
+ * The signed-in user's access token, or null when there is no session.
+ *
+ * Most routes authenticate through requireAuth, which falls back to the session
+ * cookie — so for a long time nothing here needed a token. But several routes
+ * built for the mobile app read the Authorization header themselves and accept
+ * nothing else: /providers/stripe-status, /providers/mollie-status,
+ * /providers/check-token and both /payments/methods routes. To a browser
+ * sending no header, those answer 401 "Unauthorized" — which is what surfaced
+ * when a provider pressed Mark Complete (it checks stripe-status first) and why
+ * a connected Stripe account still read as disconnected.
+ *
+ * Sending the token the way the mobile app does makes every route reachable
+ * from the web, and leaves the API untouched.
+ */
+async function bearer(): Promise<string | null> {
+  try {
+    const { data } = await getBrowserSupabase().auth.getSession()
+    return data.session?.access_token ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function apiRequest<T = unknown>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
   try {
+    const token = await bearer()
+
     const res = await fetch(`/api${endpoint}`, {
       ...options,
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers ?? {}),
       },
     })

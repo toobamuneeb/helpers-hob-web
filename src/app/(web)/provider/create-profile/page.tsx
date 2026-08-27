@@ -38,17 +38,9 @@ export default function ProviderCreateProfilePage() {
     email: profile?.email ?? '',
     phone: '',
     introduction: '',
-    locationAddress: '',
-    country: '',
-    state: '',
-    city: '',
-    zip: '',
-    workRadiusKm: '15',
   })
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [photo, setPhoto] = useState<File | null>(null)
-  const [idFront, setIdFront] = useState<File | null>(null)
-  const [idBack, setIdBack] = useState<File | null>(null)
   const [slots, setSlots] = useState<Slot[]>([])
   const [location, setLocation] = useState<PickedLocation | null>(null)
 
@@ -108,46 +100,20 @@ export default function ProviderCreateProfilePage() {
         return
       }
 
-      // ID documents are optional here, matching the mobile screen where those
-      // two checks are commented out.
-      let frontUrl: string | null = null
-      let backUrl: string | null = null
-      if (idFront) {
-        const r = await uploadImage(idFront, 'documents', `${profile.user_id}_id_front_${Date.now()}`)
-        if (r.error) { setError(r.error); setBusy(false); return }
-        frontUrl = r.url ?? null
-      }
-      if (idBack) {
-        const r = await uploadImage(idBack, 'documents', `${profile.user_id}_id_back_${Date.now()}`)
-        if (r.error) { setError(r.error); setBusy(false); return }
-        backUrl = r.url ?? null
-      }
-
       const supabase = getBrowserSupabase()
 
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          name: form.name,
-          phone: form.phone,
-          introduction: form.introduction,
-          country: location.country ?? form.country,
-          state: location.state ?? form.state,
-          city: location.city ?? form.city,
-          zip: location.postalCode ?? form.zip,
-          profile_image_url: uploadedPhoto.url,
-          id_card_front_url: frontUrl,
-          id_card_back_url: backUrl,
-          location_address: location.address,
-          location_lat: Number(location.lat),
-          location_lng: Number(location.lng),
-          work_radius_km: Number(form.workRadiusKm) || 15,
-          profile_status: 'pending',
-        })
-        .eq('user_id', profile.user_id)
-
-      if (updateError) {
-        setError(updateError.message)
+      // Availability goes first, and profile_status is the very last thing to
+      // change. Every API route refuses a 'pending' account — that gate is what
+      // holds an unapproved provider out of the app — so flipping the status
+      // before this call locked the screen out of finishing its own signup with
+      // a 403. The mobile screen sidesteps it the same way: its Continue button
+      // stays disabled until availability has already been saved.
+      const availability = await api.post('/providers/availability', {
+        provider_id: profile.user_id,
+        slots,
+      })
+      if (!availability.success) {
+        setError(availability.error ?? 'Could not save your availability')
         setBusy(false)
         return
       }
@@ -163,12 +129,32 @@ export default function ProviderCreateProfilePage() {
         return
       }
 
-      const availability = await api.post('/providers/availability', {
-        provider_id: profile.user_id,
-        slots,
-      })
-      if (!availability.success) {
-        setError(availability.error ?? 'Could not save your availability')
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          name: form.name,
+          phone: form.phone,
+          introduction: form.introduction,
+          // City, state, postcode and country all come from the picked address,
+          // the way the mobile screen fills them — there are no separate boxes
+          // for them to disagree with any more.
+          country: location.country ?? null,
+          state: location.state ?? null,
+          city: location.city ?? null,
+          zip: location.postalCode ?? null,
+          profile_image_url: uploadedPhoto.url,
+          location_address: location.address,
+          location_lat: Number(location.lat),
+          location_lng: Number(location.lng),
+          // Not asked for at signup; the column still needs the default the
+          // job feed's distance filter reads.
+          work_radius_km: 15,
+          profile_status: 'pending',
+        })
+        .eq('user_id', profile.user_id)
+
+      if (updateError) {
+        setError(updateError.message)
         setBusy(false)
         return
       }
@@ -262,42 +248,6 @@ export default function ProviderCreateProfilePage() {
               <LocationPicker value={location} onChange={setLocation}
                 label="Work location" required
                 hint="Jobs are matched to providers near the customer." />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="City">
-                  <input value={form.city} onChange={set('city')} className={INPUT_CLASS} />
-                </Field>
-                <Field label="Postal code">
-                  <input value={form.zip} onChange={set('zip')} className={INPUT_CLASS} />
-                </Field>
-                <Field label="State">
-                  <input value={form.state} onChange={set('state')} className={INPUT_CLASS} />
-                </Field>
-                <Field label="Country">
-                  <input value={form.country} onChange={set('country')} className={INPUT_CLASS} />
-                </Field>
-              </div>
-
-              <Field label="Travel distance" hint="How far you are willing to travel, in kilometres.">
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={form.workRadiusKm}
-                  onChange={set('workRadiusKm')}
-                  className={INPUT_CLASS}
-                />
-              </Field>
-            </div>
-          </Card>
-
-          <Card title="ID documents">
-            <p className="mb-4 text-sm text-ink-70">
-              Used to verify your identity. Only our review team sees these.
-            </p>
-            <div className="grid gap-4 xs:grid-cols-2">
-              <ImagePicker label="ID card — front" value={idFront} onChange={setIdFront} shape="card" />
-              <ImagePicker label="ID card — back" value={idBack} onChange={setIdBack} shape="card" />
             </div>
           </Card>
 

@@ -28,7 +28,7 @@ export default function PendingApprovalPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-8 sm:py-12">
+    <div data-role={profile?.role} className="flex min-h-screen items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-md text-center">
         <Image src="/logo.png" alt="HelpersHob" width={90} height={82} priority className="mx-auto h-auto" />
 

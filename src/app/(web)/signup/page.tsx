@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import { signUp } from '@/lib/web/auth'
 import type { UserRole } from '@/lib/web/session'
-import { Button, ErrorNote, Field, INPUT_CLASS } from '@/components/web/ui'
+import { Button, ErrorNote, Field, INPUT_CLASS, PasswordInput } from '@/components/web/ui'
 
 function SignupForm() {
   const router = useRouter()
@@ -19,6 +19,7 @@ function SignupForm() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [agreed, setAgreed] = useState(false)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,6 +31,10 @@ function SignupForm() {
     }
     if (password !== confirm) {
       setError('Passwords do not match')
+      return
+    }
+    if (!agreed) {
+      setError('Please agree to the terms and conditions')
       return
     }
 
@@ -73,33 +78,42 @@ function SignupForm() {
           </Field>
 
           <Field label="Password" required hint="At least 6 characters">
-            <input
-              type="password"
+            <PasswordInput
               required
               autoComplete="new-password"
+              minLength={6}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={INPUT_CLASS}
+              onChange={setPassword}
             />
           </Field>
 
           <Field label="Confirm password" required>
-            <input
-              type="password"
+            <PasswordInput
               required
               autoComplete="new-password"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className={INPUT_CLASS}
+              onChange={setConfirm}
             />
           </Field>
 
-          <Button type="submit" size="lg" fullWidth loading={busy}>Create account</Button>
+          <Button type="submit" size="lg" fullWidth loading={busy} disabled={!agreed}>
+            Create account
+          </Button>
 
-          <p className="text-center text-xs text-ink-50">
-            By continuing you agree to our{' '}
-            <Link href="/privacy-policy" className="underline">privacy policy</Link>.
-          </p>
+          {/* The mobile Signup screen gates the button on this same checkbox,
+              with the same wording. */}
+          <label className="flex cursor-pointer items-start gap-2.5 text-left">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-brand"
+            />
+            <span className="text-xs leading-relaxed text-ink-70">
+              I agree to the terms &amp; conditions as set out by the user agreement, and to our{' '}
+              <Link href="/privacy-policy" className="underline hover:text-ink">privacy policy</Link>.
+            </span>
+          </label>
         </form>
 
         <p className="mt-5 text-center text-sm text-ink-70">

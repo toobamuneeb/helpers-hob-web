@@ -6,7 +6,7 @@ import { Button } from '@/components/web/ui'
 
 export default function JobPostedPage() {
   return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
+    <div data-role="customer" className="flex min-h-[70vh] flex-col items-center justify-center text-center">
       <Image src="/auth/congratulations.png" alt="" width={200} height={200}
         className="h-auto w-40" priority />
       <h1 className="mt-6 text-2xl font-bold tracking-tight text-ink">Congratulations</h1>

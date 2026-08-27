@@ -7,7 +7,7 @@ import { api } from '@/lib/web/api'
 import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { useSession } from '@/lib/web/session'
 import StatTile from '@/components/web/StatTile'
-import { Avatar, Button, Card, Empty, ErrorNote, Spinner, money } from '@/components/web/ui'
+import { Avatar, Button, Card, Empty, ErrorNote, SkillIcon, Spinner, money } from '@/components/web/ui'
 
 interface Skill {
   id: string
@@ -155,12 +155,7 @@ export default function CustomerHomePage() {
                 href={`/providers?skill=${s.id}&name=${encodeURIComponent(s.name)}`}
                 className="group flex flex-col items-center gap-2 rounded-lg border border-line bg-surface p-3 text-center transition-all hover:-translate-y-0.5 hover:border-accent-role hover:shadow-md"
               >
-                <span
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-base font-bold"
-                  style={{ backgroundColor: s.color ?? '#EEFFF2' }}
-                >
-                  {s.name.slice(0, 1).toUpperCase()}
-                </span>
+                <SkillIcon icon={s.icon} color={s.color} name={s.name} size={44} />
                 <span className="text-xs font-semibold text-ink">{s.name}</span>
               </Link>
             ))}

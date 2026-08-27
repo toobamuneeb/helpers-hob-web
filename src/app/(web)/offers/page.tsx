@@ -68,6 +68,9 @@ export default function OffersPage() {
       return (
         <BookingCard key={o.offer_id} offer={o} role="service_provider"
           href={`/jobs/${o.offer_id}?from=offers`}
+          // get_pending_offers_for_provider returns offer_job_status, not
+          // offer_status — every row here is an offer waiting on this provider.
+          badge={<Badge value={o.offer_job_status ?? 'pending'} label="Awaiting Your Reply" />}
           actions={
             <>
               <Button size="sm" loading={busyId === o.offer_id}

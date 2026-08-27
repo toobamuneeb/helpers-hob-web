@@ -158,6 +158,8 @@ function PostJobForm() {
         payment_amount: serviceAmount,
         currency: 'EUR',
         is_recurring: form.isRecurring,
+        // Cash exists only on the recurring path — see the Payment card.
+        pay_through_platform: form.isRecurring ? form.payThroughPlatform : true,
         recurrence_type: form.isRecurring ? form.recurrenceType : undefined,
       }
 
@@ -167,7 +169,6 @@ function PostJobForm() {
             provider_id: providerId,
             offer_title: form.jobTitle || undefined,
             chat_id: chatId ?? undefined,
-            pay_through_platform: form.payThroughPlatform,
           })
         : await api.post('/jobs/posts', {
             ...shared,
@@ -256,11 +257,12 @@ function PostJobForm() {
             <input type="checkbox" checked={form.isRecurring}
               onChange={(e) => {
                 const on = e.target.checked
-                // Recurring work always goes through the platform, same as the app.
+                // Turning recurring off takes the cash option with it, so a
+                // one-time job can never be submitted as a cash job.
                 setForm((f) => ({
                   ...f,
                   isRecurring: on,
-                  payThroughPlatform: on ? true : f.payThroughPlatform,
+                  payThroughPlatform: on ? f.payThroughPlatform : true,
                 }))
               }}
               className="h-4 w-4 accent-[var(--color-accent-role)]" />
@@ -295,7 +297,7 @@ function PostJobForm() {
                 { value: false, label: 'Pay the provider in cash', sub: 'Settle directly on the day.' },
               ].map((o) => (
                 <button key={String(o.value)} type="button"
-                  disabled={form.isRecurring && !o.value}
+                  disabled={!form.isRecurring && !o.value}
                   onClick={() => set('payThroughPlatform', o.value)}
                   className={`w-full rounded-lg border p-3 text-left transition-colors disabled:opacity-50 ${
                     form.payThroughPlatform === o.value ? 'border-accent-role bg-accent-soft' : 'border-line'}`}>
@@ -303,8 +305,14 @@ function PostJobForm() {
                   <span className="block text-xs text-ink-50">{o.sub}</span>
                 </button>
               ))}
-              {form.isRecurring && (
-                <p className="text-xs text-ink-50">Recurring jobs are always paid through the platform.</p>
+              {/* The fee model only has a cash path for recurring work: a one-time
+                  job is 10% each side through the platform, while recurring is
+                  either 1% + the monthly token online, or the token alone with
+                  the service settled in cash. */}
+              {!form.isRecurring && (
+                <p className="text-xs text-ink-50">
+                  One-time jobs are paid through the platform. Cash is available on recurring jobs.
+                </p>
               )}
             </div>
           </Card>

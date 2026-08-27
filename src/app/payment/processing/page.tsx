@@ -177,9 +177,26 @@ function PaymentProcessingContent() {
             <h1 style={{ fontSize: '24px', marginBottom: '12px', color: '#f44336' }}>
               Payment Taking Too Long
             </h1>
-            <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.5' }}>
+            <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.5', marginBottom: '24px' }}>
               Please check your bookings to see if payment completed, or contact support.
             </p>
+            {/* Telling someone to check their bookings without a way to get
+                there leaves a browser tab at a dead end. */}
+            <a
+              href={offerId ? `/jobs/${offerId}` : '/bookings'}
+              style={{
+                display: 'inline-block',
+                backgroundColor: '#2e7d32',
+                color: '#ffffff',
+                fontSize: '15px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                padding: '12px 28px',
+                borderRadius: '8px',
+              }}
+            >
+              {offerId ? 'Check your booking' : 'Check your bookings'}
+            </a>
           </>
         )}
       </div>

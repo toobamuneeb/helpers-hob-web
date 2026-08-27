@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updatePassword } from '@/lib/web/auth'
-import { BackLink, Button, Card, ErrorNote, Field, INPUT_CLASS, PageTitle } from '@/components/web/ui'
+import { BackLink, Button, Card, ErrorNote, Field, PageTitle, PasswordInput } from '@/components/web/ui'
 
 export default function ChangePasswordPage() {
   const router = useRouter()
@@ -41,12 +41,12 @@ export default function ChangePasswordPage() {
             </p>
           )}
           <Field label="New password" required hint="At least 6 characters">
-            <input type="password" required autoComplete="new-password"
-              value={password} onChange={(e) => setPassword(e.target.value)} className={INPUT_CLASS} />
+            <PasswordInput required autoComplete="new-password" minLength={6}
+              value={password} onChange={setPassword} />
           </Field>
           <Field label="Confirm password" required>
-            <input type="password" required autoComplete="new-password"
-              value={confirm} onChange={(e) => setConfirm(e.target.value)} className={INPUT_CLASS} />
+            <PasswordInput required autoComplete="new-password"
+              value={confirm} onChange={setConfirm} />
           </Field>
           <Button type="submit" fullWidth loading={busy}>Update password</Button>
         </form>

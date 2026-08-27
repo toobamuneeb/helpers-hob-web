@@ -119,7 +119,9 @@ function VerifyForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-8 sm:py-12">
+    // Same accent as the sign-up screen this came from — the role is already
+    // known here, it was just never applied.
+    <div data-role={role} className="flex min-h-screen items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center">
           <Image src="/logo.png" alt="HelpersHob" width={72} height={66} priority className="h-auto" />

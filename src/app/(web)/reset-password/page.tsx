@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 
 import { updatePassword } from '@/lib/web/auth'
 import { useSession } from '@/lib/web/session'
-import { Button, ErrorNote, Field, INPUT_CLASS } from '@/components/web/ui'
+import { Button, ErrorNote, Field, PasswordInput } from '@/components/web/ui'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -56,24 +56,20 @@ export default function ResetPasswordPage() {
           {error && <ErrorNote>{error}</ErrorNote>}
 
           <Field label="New password" required hint="At least 6 characters">
-            <input
-              type="password"
+            <PasswordInput
               required
               autoComplete="new-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={INPUT_CLASS}
+              onChange={setPassword}
             />
           </Field>
 
           <Field label="Confirm password" required>
-            <input
-              type="password"
+            <PasswordInput
               required
               autoComplete="new-password"
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className={INPUT_CLASS}
+              onChange={setConfirm}
             />
           </Field>
 

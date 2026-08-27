@@ -78,13 +78,18 @@ const BADGE_TONES: Record<string, string> = {
  * mobile app words a status differently — an offer's `pending` reads "Awaiting
  * Response" on the Offers screen, for instance.
  */
-export function Badge({ value, label }: { value: string; label?: string }) {
-  const tone = BADGE_TONES[value] ?? 'bg-surface-muted text-ink-70 ring-line'
+export function Badge({ value, label }: { value?: string | null; label?: string }) {
+  // Not every feed carries every status field — the provider's pending-offers
+  // RPC returns offer_job_status and no offer_status, for one. A status chip is
+  // never worth crashing a page over, so a missing value renders nothing.
+  if (!value && !label) return null
+
+  const tone = (value && BADGE_TONES[value]) || 'bg-surface-muted text-ink-70 ring-line'
   return (
     <span
       className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${tone}`}
     >
-      {label ?? value.replace(/_/g, ' ')}
+      {label ?? value?.replace(/_/g, ' ')}
     </span>
   )
 }
@@ -400,4 +405,118 @@ export function dateTime(value?: string | null): string {
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return '—'
   return `${date(value)} · ${time(value)}`
+}
+
+/**
+ * A password box with a reveal toggle.
+ *
+ * The eye sits inside the field, so the input needs right padding to keep the
+ * text from running under it. Toggling swaps the type on the same element, so
+ * the value and cursor survive.
+ */
+export function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+  autoComplete = 'current-password',
+  minLength,
+  required,
+  disabled,
+  className = '',
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  autoComplete?: string
+  minLength?: number
+  required?: boolean
+  disabled?: boolean
+  className?: string
+}) {
+  const [shown, setShown] = useState(false)
+
+  return (
+    <div className="relative">
+      <input
+        type={shown ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        minLength={minLength}
+        required={required}
+        disabled={disabled}
+        className={`${INPUT_CLASS} pr-11 ${className}`}
+      />
+      <button
+        type="button"
+        onClick={() => setShown((s) => !s)}
+        disabled={disabled}
+        aria-label={shown ? 'Hide password' : 'Show password'}
+        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-50 transition-colors hover:text-ink-70 disabled:opacity-50"
+      >
+        <svg viewBox="0 0 24 24" fill="none" className="h-[1.15rem] w-[1.15rem]">
+          {shown ? (
+            <>
+              <path d="M3 3l18 18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              <path d="M10.6 10.6a2 2 0 002.8 2.8M9.4 5.2A9.5 9.5 0 0112 5c5 0 9 4.5 9 7a12 12 0 01-2.4 3.3M6.2 6.7A12.3 12.3 0 003 12c0 2.5 4 7 9 7a9.7 9.7 0 004.3-1"
+                stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </>
+          ) : (
+            <>
+              <path d="M3 12s3.6-7 9-7 9 7 9 7-3.6 7-9 7-9-7-9-7z"
+                stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.7" />
+            </>
+          )}
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+/**
+ * A work category as both apps draw it: the image from skills.icon on the
+ * pastel from skills.color.
+ *
+ * skills.icon holds a URL, not an icon name — the mobile Home tile passes it
+ * straight to an <Image source={{uri}}>. A plain <img> here for the same
+ * reason: the URL is user-managed storage of unknown dimensions, and if it
+ * will not load the initial has to take over rather than leave a hole.
+ */
+export function SkillIcon({
+  icon,
+  color,
+  name,
+  size = 44,
+}: {
+  icon: string | null
+  color: string | null
+  name: string
+  size?: number
+}) {
+  const [broken, setBroken] = useState(false)
+
+  return (
+    <span
+      className="flex shrink-0 items-center justify-center rounded-full"
+      style={{ backgroundColor: color ?? '#EEFFF2', width: size, height: size }}
+    >
+      {icon && !broken ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={icon}
+          alt=""
+          width={Math.round(size * 0.52)}
+          height={Math.round(size * 0.52)}
+          className="object-contain"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <span className="font-bold text-ink-70" style={{ fontSize: size * 0.36 }}>
+          {name.slice(0, 1).toUpperCase()}
+        </span>
+      )}
+    </span>
+  )
 }

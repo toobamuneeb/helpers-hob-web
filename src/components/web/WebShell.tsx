@@ -3,15 +3,22 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { routeForProfile, useSession } from '@/lib/web/session'
 import { Avatar, Spinner } from './ui'
 
-const PUBLIC_ROUTES = [
+// Signed-out landing and auth screens. A signed-in user has no business on
+// these, so the gate below bounces them home.
+const AUTH_ROUTES = [
   '/', '/role', '/login', '/signup', '/verify',
-  '/forgot-password', '/reset-password', '/privacy-policy', '/help',
+  '/forgot-password', '/reset-password',
 ]
+
+// Readable by anyone, signed in or not. These must NOT bounce — a signed-in
+// customer tapping "Privacy policy" in their profile wants to read it, not be
+// sent back to the home page.
+const OPEN_ROUTES = ['/privacy-policy', '/help']
 
 const GATE_ROUTES = [
   '/create-profile', '/provider/create-profile', '/pending-approval', '/suspended', '/removed',
@@ -61,28 +68,44 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const isPublic = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/verify')
+  // Signing out clears the profile, and the gate below then sends the visitor
+  // to /login — which reads the role from the query and treats anything else as
+  // a customer. Without this a provider would sign out of a blue app and land on
+  // the green customer form. Held in a ref so it survives the profile going null.
+  const lastRole = useRef<string | null>(null)
+  useEffect(() => {
+    if (profile) lastRole.current = profile.role
+  }, [profile])
+
+  const isAuth = AUTH_ROUTES.includes(pathname) || pathname.startsWith('/verify')
+  const isOpen = OPEN_ROUTES.includes(pathname)
   const isGate = GATE_ROUTES.includes(pathname)
 
   // Same gating as the mobile RootNavigator.
   useEffect(() => {
-    if (loading) return
+    // An open page is readable in every state, so it is exempt from all of this.
+    if (loading || isOpen) return
     if (!profile) {
-      if (!isPublic) router.replace('/login')
+      if (!isAuth) {
+        router.replace(lastRole.current ? `/login?role=${lastRole.current}` : '/login')
+      }
       return
     }
     const target = routeForProfile(profile)
     if (target && pathname !== target) { router.replace(target); return }
-    if (!target && (isPublic || isGate) && pathname !== '/') {
+    if (!target && (isAuth || isGate) && pathname !== '/') {
       router.replace(profile.role === 'customer' ? '/home' : '/provider/home')
     }
-  }, [loading, profile, pathname, isPublic, isGate, router])
+  }, [loading, profile, pathname, isAuth, isOpen, isGate, router])
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center"><Spinner /></div>
   }
-  if (isPublic || isGate) return <>{children}</>
-  if (!profile) return null
+  if (isAuth || isGate) return <>{children}</>
+  // An open page renders bare for a visitor, but keeps the nav for someone
+  // signed in — they are still inside the app, just reading a policy.
+  if (!profile) return isOpen ? <>{children}</> : null
+  if (isOpen && routeForProfile(profile)) return <>{children}</>
 
   const nav = profile.role === 'customer' ? CUSTOMER_NAV : PROVIDER_NAV
   const tabs = nav.filter((n) => n.tab)

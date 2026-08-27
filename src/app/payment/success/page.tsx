@@ -74,10 +74,30 @@ function PaymentSuccessContent() {
             color: '#2e7d32',
             margin: 0
           }}>
-            <strong>What's next?</strong><br/>
-            You can now close this page and return to the app to see your completed booking.
+            <strong>What&apos;s next?</strong><br/>
+            Head back to your booking to leave a review. If you started this from the app,
+            you can close this page instead.
           </p>
         </div>
+
+        {/* Stripe returns web customers to this page in a normal tab, where
+            nothing closes on its own. The mobile WebView intercepts the URL
+            before this renders, so the link only ever matters in a browser. */}
+        <a
+          href={offerId ? `/jobs/${offerId}` : '/bookings'}
+          style={{
+            display: 'inline-block',
+            backgroundColor: '#2e7d32',
+            color: '#ffffff',
+            fontSize: '15px',
+            fontWeight: 600,
+            textDecoration: 'none',
+            padding: '12px 28px',
+            borderRadius: '8px',
+          }}
+        >
+          {offerId ? 'Back to your booking' : 'Back to your bookings'}
+        </a>
 
         {offerId && (
           <p style={{ 

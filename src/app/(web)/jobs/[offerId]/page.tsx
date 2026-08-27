@@ -133,11 +133,6 @@ function JobDetail({ offerId }: { offerId: string }) {
               ? { href: '/provider/jobs', label: 'Back to Jobs' }
               : { href: '/bookings', label: 'Back to Booking/Tasks' }
 
-  // A shared or deep link carries no source, so those pages fall back to the
-  // side's own action set — the same fallback the mobile screen keeps.
-  const fromJobs = from === 'jobs' || from === 'calendar'
-  const noSource = from === null
-
   // offer_status is 'pending' twice over — for an offer nobody has answered and
   // for a job whose provider is on the way. offer_job_status separates them, so
   // the buttons never have to guess which one they are looking at.
@@ -146,7 +141,12 @@ function JobDetail({ offerId }: { offerId: string }) {
   const tooEarly = !canStart(offer)
 
   // Provider lifecycle: Start Now → Mark as Arrived → Mark Complete.
-  const providerLifecycle = isProvider && !unanswered && (fromJobs || noSource)
+  //
+  // Gated on the job, never on the screen it was opened from. Tying it to `from`
+  // meant a provider who accepted an offer from the offers list — arriving here
+  // as ?from=offers — was shown no way to start the work they had just taken.
+  // `from` decides the back link and nothing else.
+  const providerLifecycle = isProvider && !unanswered
   const providerPrimary = primaryAction(status)
 
   // Accept / Reject belong to an offer that has not been answered yet, whichever
