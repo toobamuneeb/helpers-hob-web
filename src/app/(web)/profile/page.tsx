@@ -18,6 +18,7 @@ export default function ProfilePage() {
           { href: '/provider/payouts', label: 'Payout account', sub: 'Your Stripe connection' },
         ]
       : [
+          { href: '/payments', label: 'Payment history', sub: 'What you have paid, and for what' },
           { href: '/my-jobs', label: 'My job posts', sub: 'Jobs you posted publicly' },
           { href: '/offers', label: 'My sent offers', sub: 'Offers awaiting a response' },
         ]),

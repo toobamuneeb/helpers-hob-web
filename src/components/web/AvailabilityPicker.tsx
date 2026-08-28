@@ -117,6 +117,28 @@ export default function AvailabilityPicker({
 }
 
 /** The API rejects a slot whose end is not after its start. */
+/**
+ * Put times into the HH:MM the API insists on.
+ *
+ * Postgres hands a `time` column back as HH:MM:SS, and POST /providers/
+ * availability validates strictly against HH:MM — so hours read from the server
+ * and saved again unchanged came back as "Time must be in HH:MM format". The
+ * mobile AvailabilityManager solves it the same way, taking the first two parts
+ * and padding each: seconds are dropped and 9:00 becomes 09:00.
+ */
+export function normaliseSlots(slots: Slot[]): Slot[] {
+  const toHHMM = (time: string): string => {
+    const [hours = '', minutes = ''] = (time ?? '').split(':')
+    if (!hours || !minutes) return time
+    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`
+  }
+  return slots.map((s) => ({
+    ...s,
+    start_time: toHHMM(s.start_time),
+    end_time: toHHMM(s.end_time),
+  }))
+}
+
 export function validateSlots(slots: Slot[]): string | null {
   if (slots.length === 0) return 'Add at least one time slot'
   for (const s of slots) {

@@ -39,6 +39,17 @@ interface FeedJob {
   distance_km: number | null
 }
 
+
+/** The mobile home's filter steps, in the same order, ending in "All". */
+const DISTANCES: { label: string; value: number | null }[] = [
+  { label: '5 km', value: 5 },
+  { label: '10 km', value: 10 },
+  { label: '15 km', value: 15 },
+  { label: '25 km', value: 25 },
+  { label: '50 km', value: 50 },
+  { label: 'All', value: null },
+]
+
 /** Provider home: the open job feed, distance-filtered by the API. */
 export default function ProviderHomePage() {
   const { profile } = useSession()
@@ -49,19 +60,70 @@ export default function ProviderHomePage() {
   const [earnings, setEarnings] = useState<Earnings | null>(null)
   const [active, setActive] = useState<ActiveOffer | null>(null)
 
+  // Same options and same default as the mobile home screen: no filter until
+  // the provider picks one.
+  const [distance, setDistance] = useState<number | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const PAGE = 20
+
+  // A provider with no saved coordinates cannot be distance-filtered at all —
+  // say so rather than silently ignoring the chip they just pressed.
+  const lat = profile?.location_lat ?? null
+  const lng = profile?.location_lng ?? null
+  const noLocation = lat == null || lng == null
+
+  /**
+   * One page of the feed.
+   *
+   * The distance filter is the API's, not this screen's: it only narrows when
+   * user_lat, user_lng and max_distance all arrive together, which is why a
+   * provider with no saved location gets everything however the chips are set.
+   */
+  const fetchFeed = useCallback(
+    async (offset: number, km: number | null) => {
+      const params: Record<string, string | number | boolean | null | undefined> = {
+        limit: PAGE,
+        offset,
+      }
+      if (km && lat != null && lng != null) {
+        params.user_lat = lat
+        params.user_lng = lng
+        params.max_distance = km
+      }
+      return api.get<FeedJob[]>(`/jobs/feed${api.qs(params)}`)
+    },
+    [lat, lng],
+  )
+
   const load = useCallback(async () => {
     // The mobile home shows earnings and the job in progress alongside the feed.
     const [feed, earn, act] = await Promise.all([
-      api.get<FeedJob[]>('/jobs/feed?limit=50'),
+      fetchFeed(0, distance),
       api.get<Earnings>('/payments/earnings'),
       api.get<ActiveOffer[]>('/offers?status=active&limit=1'),
     ])
-    if (feed.success) { setJobs(Array.isArray(feed.data) ? feed.data : []); setError(null) }
-    else setError(feed.error ?? 'Could not load the job feed')
+    if (feed.success) {
+      setJobs(Array.isArray(feed.data) ? feed.data : [])
+      setHasMore(feed.pagination?.has_more === true)
+      setError(null)
+    } else setError(feed.error ?? 'Could not load the job feed')
     if (earn.success && earn.data) setEarnings(earn.data)
     if (act.success && Array.isArray(act.data) && act.data.length > 0) setActive(act.data[0])
     setLoading(false)
-  }, [])
+  }, [fetchFeed, distance])
+
+  /** Append the next page — the web's equivalent of the mobile list's paging. */
+  async function loadMore() {
+    setLoadingMore(true)
+    const res = await fetchFeed(jobs.length, distance)
+    if (res.success && Array.isArray(res.data)) {
+      setJobs((prev) => [...prev, ...res.data!])
+      setHasMore(res.pagination?.has_more === true)
+    } else setError(res.error ?? 'Could not load more jobs')
+    setLoadingMore(false)
+  }
 
   // Deferred by a tick so the fetch's setState lands outside the effect body,
   // and cancelled on unmount so a slow response cannot set state on a page the
@@ -123,6 +185,29 @@ export default function ProviderHomePage() {
 
       {error && <ErrorNote>{error}</ErrorNote>}
 
+      {/* Same steps as the mobile home's filter row, "All" included. */}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        {DISTANCES.map((d) => (
+          <button
+            key={d.label}
+            type="button"
+            onClick={() => setDistance(d.value)}
+            className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+              distance === d.value
+                ? 'bg-accent-role text-white'
+                : 'bg-surface text-ink-70 ring-1 ring-inset ring-line hover:text-ink'
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+      {noLocation && distance !== null && (
+        <p className="-mt-2 text-xs text-ink-50">
+          Add your work location in your profile to filter jobs by distance.
+        </p>
+      )}
+
       {loading ? <CardSkeleton /> : jobs.length === 0 ? (
         <Card><Empty title="No open jobs right now"
           sub="New posts near you will appear here. Check back soon." /></Card>
@@ -166,6 +251,14 @@ export default function ProviderHomePage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {hasMore && !loading && (
+        <div className="flex justify-center">
+          <Button variant="outline" loading={loadingMore} onClick={loadMore}>
+            Load more jobs
+          </Button>
         </div>
       )}
     </div>

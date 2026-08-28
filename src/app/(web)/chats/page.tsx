@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { Avatar, Card, Empty, ErrorNote, PageTitle, ListSkeleton, date } from '@/components/web/ui'
 
 /** Shape the API returns — it flattens the other party into recipient_*. */
@@ -23,20 +24,53 @@ export default function ChatListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const userId = profile?.user_id
+
+  const load = useCallback(async () => {
+    if (!userId) return
+    // This route is not auth-guarded and takes the user id explicitly.
+    const res = await api.get<ChatRow[]>(
+      `/chat/list${api.qs({ user_id: userId, limit: 50 })}`,
+    )
+    if (res.success) setChats(Array.isArray(res.data) ? res.data : [])
+    else setError(res.error ?? 'Could not load your chats')
+    setLoading(false)
+  }, [userId])
+
   useEffect(() => {
     let cancelled = false
-    void (async () => {
-      // This route is not auth-guarded and takes the user id explicitly.
-      const res = await api.get<ChatRow[]>(
-        `/chat/list${api.qs({ user_id: profile?.user_id, limit: 50 })}`,
-      )
-      if (cancelled) return
-      if (res.success) setChats(Array.isArray(res.data) ? res.data : [])
-      else setError(res.error ?? 'Could not load your chats')
-      setLoading(false)
-    })()
+    void (async () => { if (!cancelled) await load() })()
     return () => { cancelled = true }
-  }, [profile?.user_id])
+  }, [load])
+
+  /**
+   * Live updates, the way the mobile chat list has them.
+   *
+   * Mobile watches three things: the chats row for either side of the
+   * conversation, and its own chat_participants row for the unread count. The
+   * list is small and the endpoint does the ordering and unread maths, so a
+   * change of any kind just reloads it rather than trying to merge by hand.
+   */
+  useEffect(() => {
+    if (!userId) return
+    const supabase = getBrowserSupabase()
+
+    const channel = supabase
+      .channel(`chat-list-${userId}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'chats' },
+        () => { void load() })
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        () => { void load() })
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_participants',
+          filter: `user_id=eq.${userId}` },
+        () => { void load() })
+      .subscribe()
+
+    return () => { void supabase.removeChannel(channel) }
+  }, [userId, load])
 
   return (
     <div className="space-y-5">

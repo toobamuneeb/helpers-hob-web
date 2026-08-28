@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, use, useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
@@ -165,7 +166,17 @@ function JobPost({ jobId }: { jobId: string }) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="flex items-center gap-3">
               <Avatar src={job.customer.profile_image_url} name={job.customer.name} />
-              <span className="font-semibold text-ink">{job.customer.name ?? 'Customer'}</span>
+              <span className="min-w-0">
+                <span className="block font-semibold text-ink">
+                  {job.customer.name ?? 'Customer'}
+                </span>
+                {/* A provider deciding whether to take the job can look the
+                    customer up first, the same way a customer checks them. */}
+                <Link href={`/customers/${job.customer.user_id}`}
+                  className="text-sm font-semibold text-accent-role hover:underline">
+                  View profile
+                </Link>
+              </span>
             </span>
             <Button onClick={message} loading={busy}>Message customer</Button>
           </div>

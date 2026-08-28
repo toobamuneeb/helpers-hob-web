@@ -1,12 +1,58 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { getBrowserSupabase } from '@/lib/supabase-browser';
+import { Suspense, useEffect, useState } from 'react';
+
+
+/**
+ * The signed-in role, read directly because these pages sit outside the (web)
+ * group and so have no SessionProvider above them.
+ *
+ * It matters here: a provider pays the monthly token through this same flow,
+ * and "your bookings" is the customer's side of the app — sending them there
+ * drops them somewhere they have no business being.
+ */
+function useRole(): { role: 'customer' | 'service_provider' | null; signedIn: boolean | null } {
+  const [role, setRole] = useState<'customer' | 'service_provider' | null>(null);
+  // null while it is still being worked out, so nothing flashes the wrong way.
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const supabase = getBrowserSupabase();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setSignedIn(Boolean(user));
+        if (!user) return;
+        const { data } = await supabase
+          .from('profiles').select('role').eq('user_id', user.id).maybeSingle();
+        if (!cancelled) setRole(data?.role ?? null);
+      } catch {
+        // Leave it null — the customer destination is the safe default.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return { role, signedIn };
+}
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const offerId = searchParams.get('offer_id');
   const paymentId = searchParams.get('payment_id');
+  const { role, signedIn } = useRole();
+  const isProvider = role === 'service_provider';
+
+  // Stripe returns to NEXT_PUBLIC_APP_URL, which need not be the origin the
+  // payment started from — pay on localhost and you come back to the deployed
+  // site, where that browser has no session. Sending someone into the app from
+  // there just bounces them to the login screen, which reads as being signed
+  // out by pressing the button. Say what is actually needed instead.
+  const needsSignIn = signedIn === false;
 
   return (
     <div style={{
@@ -84,7 +130,13 @@ function PaymentSuccessContent() {
             nothing closes on its own. The mobile WebView intercepts the URL
             before this renders, so the link only ever matters in a browser. */}
         <a
-          href={offerId ? `/jobs/${offerId}` : '/bookings'}
+          href={
+            needsSignIn
+              ? '/login'
+              : offerId
+                ? `/jobs/${offerId}?from=${isProvider ? 'jobs' : 'bookings'}`
+                : isProvider ? '/provider/jobs' : '/bookings'
+          }
           style={{
             display: 'inline-block',
             backgroundColor: '#2e7d32',
@@ -96,7 +148,11 @@ function PaymentSuccessContent() {
             borderRadius: '8px',
           }}
         >
-          {offerId ? 'Back to your booking' : 'Back to your bookings'}
+          {needsSignIn
+            ? 'Sign in to see your booking'
+            : isProvider
+              ? (offerId ? 'Back to the job' : 'Back to your jobs')
+              : (offerId ? 'Back to your booking' : 'Back to your bookings')}
         </a>
 
         {offerId && (

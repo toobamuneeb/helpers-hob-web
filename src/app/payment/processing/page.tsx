@@ -1,12 +1,40 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { getBrowserSupabase } from '@/lib/supabase-browser';
 import { useEffect, useState, Suspense } from 'react';
+
+
+/** See the success page — no SessionProvider above these, so read it directly. */
+function useRole(): 'customer' | 'service_provider' | null {
+  const [role, setRole] = useState<'customer' | 'service_provider' | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const supabase = getBrowserSupabase();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || cancelled) return;
+        const { data } = await supabase
+          .from('profiles').select('role').eq('user_id', user.id).maybeSingle();
+        if (!cancelled) setRole(data?.role ?? null);
+      } catch {
+        // Null falls back to the customer destination.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return role;
+}
 
 function PaymentProcessingContent() {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get('payment_id');
   const offerId = searchParams.get('offer_id');
+  const role = useRole();
+  const isProvider = role === 'service_provider';
   const [status, setStatus] = useState<'processing' | 'success' | 'failed'>('processing');
   const [checkCount, setCheckCount] = useState(0);
 
@@ -183,7 +211,11 @@ function PaymentProcessingContent() {
             {/* Telling someone to check their bookings without a way to get
                 there leaves a browser tab at a dead end. */}
             <a
-              href={offerId ? `/jobs/${offerId}` : '/bookings'}
+              href={
+                offerId
+                  ? `/jobs/${offerId}?from=${isProvider ? 'jobs' : 'bookings'}`
+                  : isProvider ? '/provider/jobs' : '/bookings'
+              }
               style={{
                 display: 'inline-block',
                 backgroundColor: '#2e7d32',
@@ -195,7 +227,9 @@ function PaymentProcessingContent() {
                 borderRadius: '8px',
               }}
             >
-              {offerId ? 'Check your booking' : 'Check your bookings'}
+              {isProvider
+                ? (offerId ? 'Check the job' : 'Check your jobs')
+                : (offerId ? 'Check your booking' : 'Check your bookings')}
             </a>
           </>
         )}

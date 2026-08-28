@@ -5,13 +5,28 @@ import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
 import { Card, Empty, ErrorNote, PageTitle, Spinner, date } from '@/components/web/ui'
 
+/**
+ * A row from /reviews/[userId].
+ *
+ * The score is named after the side that gave it, not the side reading it:
+ * get_provider_reviews returns customer_rating, get_customer_reviews returns
+ * provider_rating, and the date is review_date in both. Reading `rating` and
+ * `created_at` — which neither returns — is why reviews rendered as a dash with
+ * no date and the average came out as zero.
+ */
 interface Review {
   review_id: string
-  rating: number | null
+  customer_rating?: number | null
+  provider_rating?: number | null
   review_title: string | null
   review_text: string | null
   reviewer_name: string | null
-  created_at: string
+  review_date: string
+}
+
+/** Whichever of the two the endpoint filled in for this reader. */
+function scoreOf(r: Review): number | null {
+  return r.provider_rating ?? r.customer_rating ?? null
 }
 
 export default function MyReviewsPage() {
@@ -35,7 +50,7 @@ export default function MyReviewsPage() {
   }, [profile, isProvider])
 
   const avg = reviews.length
-    ? (reviews.reduce((a, r) => a + (r.rating ?? 0), 0) / reviews.length).toFixed(2)
+    ? (reviews.reduce((a, r) => a + (scoreOf(r) ?? 0), 0) / reviews.length).toFixed(2)
     : null
 
   return (
@@ -53,11 +68,11 @@ export default function MyReviewsPage() {
               <li key={r.review_id} className="border-b border-line-soft pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-semibold text-ink">{r.reviewer_name ?? 'Anonymous'}</span>
-                  <span className="font-semibold text-accent-role">{r.rating ? `${r.rating} ★` : '—'}</span>
+                  <span className="font-semibold text-accent-role">{scoreOf(r) ? `${scoreOf(r)} ★` : '—'}</span>
                 </div>
                 {r.review_title && <p className="mt-1 text-sm font-medium text-ink">{r.review_title}</p>}
                 {r.review_text && <p className="mt-0.5 text-sm text-ink-70">{r.review_text}</p>}
-                <p className="mt-1 text-xs text-ink-50">{date(r.created_at)}</p>
+                <p className="mt-1 text-xs text-ink-50">{date(r.review_date)}</p>
               </li>
             ))}
           </ul>

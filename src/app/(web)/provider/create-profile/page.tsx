@@ -8,7 +8,7 @@ import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { api } from '@/lib/web/api'
 import { uploadImage } from '@/lib/web/storage'
 import { useSession } from '@/lib/web/session'
-import AvailabilityPicker, { validateSlots, type Slot } from '@/components/web/AvailabilityPicker'
+import AvailabilityPicker, { normaliseSlots, validateSlots, type Slot } from '@/components/web/AvailabilityPicker'
 import ImagePicker from '@/components/web/ImagePicker'
 import LocationPicker, { type PickedLocation } from '@/components/web/LocationPicker'
 import { Button, Card, ErrorNote, Field, INPUT_CLASS, Spinner } from '@/components/web/ui'
@@ -28,7 +28,7 @@ interface Skill {
  */
 export default function ProviderCreateProfilePage() {
   const router = useRouter()
-  const { profile, refresh } = useSession()
+  const { profile, refresh, signOut } = useSession()
 
   const [skills, setSkills] = useState<Skill[]>([])
   const [loadingSkills, setLoadingSkills] = useState(true)
@@ -110,7 +110,7 @@ export default function ProviderCreateProfilePage() {
       // stays disabled until availability has already been saved.
       const availability = await api.post('/providers/availability', {
         provider_id: profile.user_id,
-        slots,
+        slots: normaliseSlots(slots),
       })
       if (!availability.success) {
         setError(availability.error ?? 'Could not save your availability')
@@ -170,6 +170,21 @@ export default function ProviderCreateProfilePage() {
   return (
     <div data-role="service_provider" className="min-h-screen px-4 py-10">
       <div className="mx-auto w-full max-w-2xl">
+        {/* The only way out of this screen. There is a session but no profile
+            yet, so "back" can only mean ending the session — say so plainly
+            rather than leaving someone stuck here. */}
+        <button
+          type="button"
+          onClick={signOut}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-50 transition-colors hover:text-ink"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Back to sign in
+        </button>
+
         <div className="mb-6 flex flex-col items-center">
           <Image src="/logo.png" alt="HelpersHob" width={72} height={66} priority className="h-auto" />
         </div>
@@ -243,7 +258,7 @@ export default function ProviderCreateProfilePage() {
             )}
           </Card>
 
-          <Card title="Where you work">
+          <Card title="Where you work" allowOverflow>
             <div className="space-y-4">
               <LocationPicker value={location} onChange={setLocation}
                 label="Work location" required

@@ -1,6 +1,7 @@
 'use client'
 
 import { use, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
 import {
@@ -39,8 +40,25 @@ interface Receipt {
  * they were charged, the provider what they received. The API returns both, so
  * the totals row is chosen by role rather than recomputed here.
  */
+/**
+ * Where "Back" goes, decided by the screen that linked here rather than by the
+ * viewer's role. A receipt is reached from the earnings list, from a job, and
+ * from a booking, and each of those is the right place to return to.
+ */
+function backTo(from: string | null, isProvider: boolean, offerId?: string | null) {
+  if (from === 'earnings') return { href: '/provider/earnings', label: 'Back to Payment History' }
+  if (from === 'jobs') return { href: '/provider/jobs', label: 'Back to Jobs' }
+  if (from === 'bookings') return { href: '/bookings', label: 'Back to Booking/Tasks' }
+  if (from === 'payments') return { href: '/payments', label: 'Back to Payment History' }
+  if (from === 'job' && offerId) return { href: `/jobs/${offerId}`, label: 'Back to the job' }
+  return isProvider
+    ? { href: '/provider/earnings', label: 'Back to Payment History' }
+    : { href: '/bookings', label: 'Back to Booking/Tasks' }
+}
+
 export default function ReceiptPage({ params }: { params: Promise<{ paymentId: string }> }) {
   const { paymentId } = use(params)
+  const from = useSearchParams().get('from')
   const { isProvider } = useSession()
 
   const [receipt, setReceipt] = useState<Receipt | null>(null)
@@ -64,33 +82,63 @@ export default function ReceiptPage({ params }: { params: Promise<{ paymentId: s
   if (loading) return <Spinner />
   if (!receipt) return <ErrorNote>{error ?? 'Receipt not found'}</ErrorNote>
 
+  const back = backTo(from, isProvider)
   const a = receipt.amounts ?? {}
   const currency = receipt.currency ?? 'EUR'
 
-  const lines: [string, number | undefined][] = [
-    ['Service fee', a.service_fee],
-    ['Platform fee', a.platform_fee],
-    ['Customer subscription', a.customer_token],
-    ['Provider subscription', a.provider_token],
-    ['Paid in cash', a.cash_amount],
-  ]
+  // A cash job's service money is handed over directly, so the platform only
+  // ever sees the monthly tokens — and the receipt for one of those is a
+  // subscription charge, not the job's payment. Read as a job receipt it said
+  // the provider "received EUR 0.00" for a EUR 50 job and called the EUR 5
+  // token a service fee.
+  const kind = receipt.payment_kind
+  const isToken = kind === 'provider_token' || kind === 'customer_token'
 
-  const totalLabel = isProvider ? 'You received' : 'Total paid'
-  const totalValue = isProvider ? a.provider_receives : a.total_paid
+  const lines: [string, number | undefined][] = isToken
+    ? [
+        ['Monthly subscription', a.total_paid],
+        ['Job settled in cash', receipt.is_cash_payment ? a.cash_amount : undefined],
+      ]
+    : [
+        ['Service fee', a.service_fee],
+        ['Platform fee', a.platform_fee],
+        ['Customer subscription', a.customer_token],
+        ['Provider subscription', a.provider_token],
+        ['Paid in cash', a.cash_amount],
+      ]
+
+  const title = isToken ? 'Subscription Receipt' : 'Payment Receipt'
+
+  // Money out for a token, money in for a completed job.
+  const totalLabel = isToken
+    ? 'You paid'
+    : isProvider ? 'You received' : 'Total paid'
+  const totalValue = isToken
+    ? a.total_paid
+    : isProvider ? a.provider_receives : a.total_paid
 
   return (
     <div className="space-y-5">
-      <BackLink href={isProvider ? '/provider/earnings' : '/bookings'}>Back</BackLink>
+      <div className="print:hidden">
+        <BackLink href={back.href}>{back.label}</BackLink>
+      </div>
 
       <Card bleed>
         <div className="border-b border-line-soft bg-accent-soft px-6 py-5 text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-70">
-            Payment Receipt
+            {title}
           </p>
           <p className="mt-1 text-[1.75rem] font-bold tabular-nums text-accent-role">
             {money(totalValue, currency)}
           </p>
           <p className="mt-0.5 text-xs text-ink-70">{totalLabel}</p>
+          {isToken && (
+            <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-ink-70">
+              This is your monthly subscription for recurring work — not the payment for
+              this job.
+            </p>
+          )}
+
           <div className="mt-3 flex flex-wrap justify-center gap-1.5">
             {receipt.status && <Badge value={receipt.status} />}
             {receipt.is_recurring && (
@@ -141,7 +189,9 @@ export default function ReceiptPage({ params }: { params: Promise<{ paymentId: s
             </div>
           </dl>
 
-          <Button variant="outline" fullWidth className="mt-5" onClick={() => window.print()}>
+          {/* The button that starts the print has no place in its output. */}
+          <Button variant="outline" fullWidth className="mt-5 print:hidden"
+            onClick={() => window.print()}>
             Print / Save as PDF
           </Button>
         </div>

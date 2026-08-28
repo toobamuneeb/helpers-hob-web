@@ -10,13 +10,28 @@ import {
 } from '@/components/web/ui'
 import type { DayOfWeek } from '@/types/availability'
 
+/**
+ * A row from /reviews/[userId].
+ *
+ * The score is named after the side that gave it, not the side reading it:
+ * get_provider_reviews returns customer_rating, get_customer_reviews returns
+ * provider_rating, and the date is review_date in both. Reading `rating` and
+ * `created_at` — which neither returns — is why reviews rendered as a dash with
+ * no date and the average came out as zero.
+ */
 interface Review {
   review_id: string
-  rating: number | null
-  review_text: string | null
+  customer_rating?: number | null
+  provider_rating?: number | null
   review_title: string | null
+  review_text: string | null
   reviewer_name: string | null
-  created_at: string
+  review_date: string
+}
+
+/** Whichever of the two the endpoint filled in for this reader. */
+function scoreOf(r: Review): number | null {
+  return r.provider_rating ?? r.customer_rating ?? null
 }
 
 interface ProviderProfile {
@@ -171,12 +186,12 @@ export default function ProviderProfilePage({
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-semibold text-ink">{r.reviewer_name ?? 'Customer'}</span>
                   <span className="text-sm font-semibold text-accent-role">
-                    {r.rating ? `${r.rating} ★` : '—'}
+                    {scoreOf(r) ? `${scoreOf(r)} ★` : '—'}
                   </span>
                 </div>
                 {r.review_title && <p className="mt-1 text-sm font-medium text-ink">{r.review_title}</p>}
                 {r.review_text && <p className="mt-0.5 text-sm text-ink-70">{r.review_text}</p>}
-                <p className="mt-1 text-xs text-ink-50">{date(r.created_at)}</p>
+                <p className="mt-1 text-xs text-ink-50">{date(r.review_date)}</p>
               </li>
             ))}
           </ul>

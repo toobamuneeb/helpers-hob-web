@@ -2,8 +2,10 @@
 
 import { use, useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/web/api'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { useSession } from '@/lib/web/session'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Avatar, BackLink, Button, ErrorNote, INPUT_CLASS, Spinner, dateTime } from '@/components/web/ui'
 
 interface ChatMeta {
@@ -23,7 +25,7 @@ interface Message {
 
 export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
   const { chatId } = use(params)
-  const { profile, isCustomer } = useSession()
+  const { profile, isCustomer, isProvider } = useSession()
   const router = useRouter()
   const [meta, setMeta] = useState<ChatMeta | null>(null)
 
@@ -74,14 +76,28 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
       void load()
       void api.post('/chat/mark-read', { chat_id: chatId })
     }, 0)
-    // Light polling: the mobile app uses Supabase realtime, which would need a
-    // second subscription path here. Refreshing every few seconds is enough for
-    // a chat and keeps the data flowing through the same API.
-    const timer = setInterval(() => { if (!cancelled) void load() }, 5000)
+    // Realtime on this chat's messages, the same subscription the mobile
+    // useChat opens. The slow interval stays underneath as a safety net for a
+    // dropped socket — long enough not to be the thing doing the work.
+    const supabase = getBrowserSupabase()
+    const channel = supabase
+      .channel(`chat-messages-${chatId}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages',
+          filter: `chat_id=eq.${chatId}` },
+        () => {
+          if (cancelled) return
+          void load()
+          void api.post('/chat/mark-read', { chat_id: chatId })
+        })
+      .subscribe()
+
+    const timer = setInterval(() => { if (!cancelled) void load() }, 30000)
     return () => {
       cancelled = true
       clearTimeout(first)
       clearInterval(timer)
+      void supabase.removeChannel(channel)
     }
   }, [chatId, load])
 
@@ -133,7 +149,17 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
       {meta?.recipient_name && (
         <div className="mb-3 flex items-center gap-2.5 rounded-xl border border-line bg-surface px-4 py-3">
           <Avatar src={meta.recipient_avatar} name={meta.recipient_name} size="sm" />
-          <span className="font-semibold text-ink">{meta.recipient_name}</span>
+          {/* Whoever you are talking to, their profile is one tap away. */}
+          {meta.recipient_id ? (
+            <Link
+              href={isProvider ? `/customers/${meta.recipient_id}` : `/providers/${meta.recipient_id}`}
+              className="font-semibold text-ink hover:text-accent-role hover:underline"
+            >
+              {meta.recipient_name}
+            </Link>
+          ) : (
+            <span className="font-semibold text-ink">{meta.recipient_name}</span>
+          )}
         </div>
       )}
 

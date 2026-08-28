@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
 import { api } from '@/lib/web/api'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { useSession } from '@/lib/web/session'
 import MapView from '@/components/web/MapView'
 import CancelRecurringDialog from '@/components/web/CancelRecurringDialog'
@@ -54,8 +55,6 @@ interface Offer {
   provider_id: string
   provider_name: string | null
   provider_avatar: string | null
-  has_customer_review: boolean
-  has_provider_review: boolean
 }
 
 /**
@@ -79,7 +78,16 @@ function JobDetail({ offerId }: { offerId: string }) {
   const tab = search.get('tab')
   const withTab = (href: string) => (tab ? `${href}?tab=${encodeURIComponent(tab)}` : href)
 
-  const { isProvider } = useSession()
+  const { profile, isProvider } = useSession()
+
+  // The job's own payment and the month's subscription are two different
+  // transactions, and a recurring job can have both. Kept apart so each gets
+  // its own receipt.
+  const [jobPaymentId, setJobPaymentId] = useState<string | null>(null)
+  const [tokenPaymentId, setTokenPaymentId] = useState<string | null>(null)
+
+  // Which side has already left a review on this job.
+  const [reviewed, setReviewed] = useState({ customer: false, provider: false })
 
   const [offer, setOffer] = useState<Offer | null>(null)
   const [loading, setLoading] = useState(true)
@@ -98,6 +106,61 @@ function JobDetail({ offerId }: { offerId: string }) {
     const t = setTimeout(() => { if (!cancelled) void load() }, 0)
     return () => { cancelled = true; clearTimeout(t) }
   }, [load])
+
+  /**
+   * Every paid transaction filed against this job, sorted into the two things
+   * one can be.
+   *
+   * job_offers.payment_id only ever points at a service payment the platform
+   * handled — a cash job has none, and the monthly subscription never appears
+   * there at all. The payments rows are the whole picture, and the two kinds
+   * are kept apart so the work and the fee each keep their own slip.
+   */
+  useEffect(() => {
+    if (!offer || !profile) return
+    let cancelled = false
+    void (async () => {
+      const { data } = await getBrowserSupabase()
+        .from('payments')
+        .select('payment_id, payment_kind, payer_id, payee_id')
+        .eq('offer_id', offer.offer_id)
+        .eq('payment_status', 'paid')
+      if (cancelled || !data) return
+
+      const rows = data as unknown as PaymentRow[]
+
+      // Only the two sides of a transaction get to see its receipt.
+      const mine = rows.filter(
+        (r) => r.payer_id === profile.user_id || r.payee_id === profile.user_id,
+      )
+      const isTokenRow = (k: string | null) =>
+        k === 'provider_token' || k === 'customer_token'
+
+      setTokenPaymentId(mine.find((r) => isTokenRow(r.payment_kind))?.payment_id ?? null)
+      setJobPaymentId(mine.find((r) => !isTokenRow(r.payment_kind))?.payment_id ?? null)
+    })()
+    return () => { cancelled = true }
+  }, [offer, profile])
+
+  // One row per offer, holding both sides' reviews — a date is set when that
+  // side has written one.
+  useEffect(() => {
+    if (!offer || offer.offer_status !== 'completed') return
+    let cancelled = false
+    void (async () => {
+      const { data } = await getBrowserSupabase()
+        .from('job_reviews')
+        .select('customer_review_date, provider_review_date')
+        .eq('offer_id', offer.offer_id)
+        .maybeSingle()
+      if (cancelled || !data) return
+      setReviewed({
+        customer: Boolean(data.customer_review_date),
+        provider: Boolean(data.provider_review_date),
+      })
+    })()
+    return () => { cancelled = true }
+  }, [offer])
 
   // Every lifecycle action, with the gates the mobile app puts before them.
   const jobs = useJobActions(load)
@@ -157,24 +220,48 @@ function JobDetail({ offerId }: { offerId: string }) {
   const providerCanCancel =
     providerLifecycle && ['scheduled', 'pending', 'active'].includes(status)
 
-  // The customer's own cancel. The customer's side calls this an offer from the
-  // moment they send it, so the wording stays "Cancel Offer" after acceptance
-  // too — the mobile detail screen says "Cancel Booking" here instead.
+  // The customer's own cancel. What it is called depends on what it is: an
+  // offer nobody has answered is still an offer, but once the provider has
+  // accepted it there is scheduled work, and the mobile detail screen calls
+  // that "Cancel Booking". Saying "Cancel Offer" over an active job read as
+  // cancelling something that had already happened.
   const customerCanCancel =
     !isProvider && !settled && status !== 'awaiting_confirmation'
-  const customerCancelLabel = 'Cancel Offer'
+  const customerCancelLabel = unanswered ? 'Cancel Offer' : 'Cancel Booking'
 
   // Only while the series is live — nothing upcoming to stop from a finished or
   // canceled booking, and a pending offer never started one.
   const canCancelRecurring =
     offer.is_recurring && ['scheduled', 'active', 'awaiting_confirmation'].includes(status)
 
-  const alreadyReviewed = isProvider ? offer.has_provider_review : offer.has_customer_review
+  // job_offers has no has_customer_review / has_provider_review column — those
+  // reads were always undefined, so "Give a Review" came back after every
+  // review and each new one overwrote the last (the RPC upserts on offer_id).
+  // The review row itself is the only record of it, so ask that.
+  const alreadyReviewed = isProvider ? reviewed.provider : reviewed.customer
+
+  // A cash job's service money never passes through the platform, so the offer
+  // keeps payment_status 'pending' for good and payment_id stays null — only
+  // the monthly tokens get payment rows. Gating on 'paid' therefore withheld
+  // the review and the receipt from every completed recurring cash job,
+  // permanently. Completion is the condition for a cash job; 'paid' is only
+  // meaningful when the platform took the money.
+  const cashJob = offer.pay_through_platform === false
+
   const canReview =
     status === 'completed' && !alreadyReviewed &&
-    (!offer.payment_status || offer.payment_status === 'paid')
+    (cashJob || !offer.payment_status || offer.payment_status === 'paid')
 
-  const hasReceipt = Boolean(offer.payment_id) && offer.payment_status === 'paid'
+  // The offer's own payment when the platform took it; otherwise whatever this
+  // user actually paid against this job — for a cash job, the month's token.
+  // A cash job has no payments row for the service — that money went hand to
+  // hand — so its slip is built from the job itself. Everything else has a real
+  // payment behind it, and /receipts/[paymentId] describes that.
+  const cashReceipt = cashJob && status === 'completed'
+
+  const receiptId =
+    offer.payment_status === 'paid' && offer.payment_id ? offer.payment_id : jobPaymentId
+  const hasReceipt = cashReceipt || Boolean(receiptId) || Boolean(tokenPaymentId)
 
   const hasActions = Boolean(
     providerCanAnswer ||
@@ -241,8 +328,10 @@ function JobDetail({ offerId }: { offerId: string }) {
             <Avatar src={otherAvatar} name={otherName} />
             <div className="min-w-0">
               <p className="truncate font-semibold text-ink">{otherName ?? '—'}</p>
-              {!isProvider && otherId && (
-                <Link href={`/providers/${otherId}`}
+              {/* Both directions: the customer opens the provider's profile, the
+                  provider opens the customer's. */}
+              {otherId && (
+                <Link href={isProvider ? `/customers/${otherId}` : `/providers/${otherId}`}
                   className="text-sm font-semibold text-accent-role hover:underline">
                   View profile
                 </Link>
@@ -342,7 +431,11 @@ function JobDetail({ offerId }: { offerId: string }) {
             )}
             {customerCanCancel && (
               <Button variant="danger" disabled={busy}
-                onClick={() => window.confirm(`${customerCancelLabel}?`) && void act('cancel')}>
+                onClick={() => window.confirm(
+                  unanswered
+                    ? 'Cancel this offer?'
+                    : 'Cancel this booking? The provider will be told it is off.',
+                ) && void act('cancel')}>
                 {customerCancelLabel}
               </Button>
             )}
@@ -357,9 +450,21 @@ function JobDetail({ offerId }: { offerId: string }) {
               <Link href={`/reviews/new/${offer.offer_id}`}><Button>Give a Review</Button></Link>
             )}
             {/* The payment slip, once there is a payment to show. */}
-            {hasReceipt && (
-              <Link href={`/receipts/${offer.payment_id}`}>
+            {cashReceipt && (
+              <Link href={`/receipts/job/${offer.offer_id}?from=job`}>
+                <Button variant="outline">Cash Receipt</Button>
+              </Link>
+            )}
+            {!cashReceipt && receiptId && (
+              <Link href={`/receipts/${receiptId}?from=job`}>
                 <Button variant="outline">Payment Receipt</Button>
+              </Link>
+            )}
+            {/* The monthly subscription is charged apart from the work, so it
+                keeps its own slip whether the job was cash or card. */}
+            {tokenPaymentId && (
+              <Link href={`/receipts/${tokenPaymentId}?from=job`}>
+                <Button variant="outline">Subscription Receipt</Button>
               </Link>
             )}
           </div>
@@ -379,6 +484,13 @@ function JobDetail({ offerId }: { offerId: string }) {
       />
     </div>
   )
+}
+
+interface PaymentRow {
+  payment_id: string
+  payment_kind: string | null
+  payer_id: string | null
+  payee_id: string | null
 }
 
 export default function JobDetailPage({ params }: { params: Promise<{ offerId: string }> }) {

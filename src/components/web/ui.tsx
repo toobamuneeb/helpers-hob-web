@@ -13,17 +13,26 @@ export function Card({
   action,
   children,
   className = '',
-  bleed = false,
+  bleed,
+  allowOverflow = false,
 }: {
   title?: ReactNode
   action?: ReactNode
   children: ReactNode
   className?: string
   bleed?: boolean
+  /**
+   * Let content escape the card's bounds.
+   *
+   * The clip exists so bleed tables and images stop at the rounded corners, but
+   * it also cuts off anything positioned outside — an address suggestion list
+   * hanging below its input, for one. Cards holding such a control opt out.
+   */
+  allowOverflow?: boolean
 }) {
   return (
     <section
-      className={`overflow-hidden rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgba(37,41,42,.04),0_4px_16px_-8px_rgba(37,41,42,.10)] ${className}`}
+      className={`${allowOverflow ? '' : 'overflow-hidden'} rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgba(37,41,42,.04),0_4px_16px_-8px_rgba(37,41,42,.10)] ${className}`}
     >
       {(title || action) && (
         <header className="flex items-center justify-between gap-4 border-b border-line-soft px-5 py-4">

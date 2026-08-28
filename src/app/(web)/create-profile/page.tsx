@@ -26,7 +26,7 @@ interface FormState {
  */
 export default function CreateProfilePage() {
   const router = useRouter()
-  const { profile, refresh } = useSession()
+  const { profile, refresh, signOut } = useSession()
 
   const [form, setForm] = useState<FormState>({
     name: '',
@@ -99,6 +99,21 @@ export default function CreateProfilePage() {
   return (
     <div data-role="customer" className="flex min-h-screen items-start justify-center px-4 py-10">
       <div className="w-full max-w-lg">
+        {/* The only way out of this screen. There is a session but no profile
+            yet, so "back" can only mean ending the session — say so plainly
+            rather than leaving someone stuck here. */}
+        <button
+          type="button"
+          onClick={signOut}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-50 transition-colors hover:text-ink"
+        >
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8"
+              strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Back to sign in
+        </button>
+
         <div className="mb-6 flex flex-col items-center">
           <Image src="/logo.png" alt="HelpersHob" width={72} height={66} priority className="h-auto" />
         </div>

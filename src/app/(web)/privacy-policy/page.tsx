@@ -1,11 +1,11 @@
-import Link from 'next/link'
+import PolicyBackLink from '@/components/web/PolicyBackLink'
 
 export const metadata = { title: 'Privacy policy · HelpersHob' }
 
 export default function PrivacyPolicyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <Link href="/" className="text-sm font-semibold text-ink-50 hover:text-ink">← Back</Link>
+      <PolicyBackLink />
       <h1 className="mt-4 text-2xl font-bold tracking-tight text-ink">Privacy policy</h1>
 
       <div className="mt-6 space-y-5 text-sm leading-relaxed text-ink-70">

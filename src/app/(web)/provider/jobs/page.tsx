@@ -73,6 +73,17 @@ function ProviderJobs() {
   const error = loadError ?? jobs.error
 
   function actionsFor(o: OfferLike) {
+    // Marked complete already — the customer confirms and pays from here, so
+    // there is nothing for the provider to press. Mobile hides its button at
+    // this status too; without a word of explanation the card just looks stuck.
+    if (o.offer_status === 'awaiting_confirmation') {
+      return (
+        <span className="text-xs font-semibold text-ink-50">
+          Waiting for the customer to confirm and pay
+        </span>
+      )
+    }
+
     const next = primaryAction(o.offer_status)
     if (!next) return null
     const blocked = next[1] === 'start' && !canStart(o)

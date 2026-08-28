@@ -101,6 +101,13 @@ function PostJobForm() {
 
   const rate = parseFloat(form.serviceFee) || 0
   const serviceAmount = rate * form.serviceHours
+  // Local date, not toISOString() — that shifts to UTC and can hand back
+  // yesterday for anyone west of Greenwich.
+  const today = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })()
+
   const feeRate = form.isRecurring ? 0.01 : 0.1
   const platformFee = serviceAmount * feeRate
   const token = form.isRecurring ? CUSTOMER_TOKEN : 0
@@ -119,6 +126,15 @@ function PostJobForm() {
     if (!photo) return setError('Please add a photo of the job')
     if (!location) return setError('Please pick an address from the suggestions')
     if (!form.date || !form.time) return setError('Please pick a date and time')
+    // A job in the past cannot be worked. The mobile date picker refuses one
+    // with minimumDate, and a `min` on the input below does the same here — but
+    // that is only a hint the browser offers, so the real refusal is this one,
+    // and it catches a past time on today's date too.
+    const when = new Date(`${form.date}T${form.time}`)
+    if (Number.isNaN(when.getTime())) return setError('That date and time do not look right')
+    if (when.getTime() <= Date.now()) {
+      return setError('Please pick a date and time in the future')
+    }
     if (serviceAmount <= 0) return setError('Please enter an hourly rate')
     if (form.isRecurring && !form.recurrenceType) return setError('Please choose how often it repeats')
     if (!profile) return
@@ -135,8 +151,8 @@ function PostJobForm() {
 
       // service_date carries the full moment; service_time is the clock time on
       // a fixed epoch day — the shape both columns use (timestamptz).
-      const serviceDateTime = new Date(`${form.date}T${form.time}`)
-      const service_date = serviceDateTime.toISOString()
+      // Already parsed and checked above.
+      const service_date = when.toISOString()
       const service_time = new Date(`1970-01-01T${form.time}:00`).toISOString()
 
       // Hours are persisted, not just used for the price — the provider needs
@@ -224,12 +240,13 @@ function PostJobForm() {
           </div>
         </Card>
 
-        <Card title="Where and when">
+        <Card title="Where and when" allowOverflow>
           <div className="space-y-4">
             <LocationPicker value={location} onChange={setLocation} required />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Date" required>
-                <input type="date" required value={form.date} onChange={(e) => set('date', e.target.value)} className={INPUT_CLASS} />
+                <input type="date" required min={today} value={form.date}
+                  onChange={(e) => set('date', e.target.value)} className={INPUT_CLASS} />
               </Field>
               <Field label="Start time" required>
                 <input type="time" required value={form.time} onChange={(e) => set('time', e.target.value)} className={INPUT_CLASS} />

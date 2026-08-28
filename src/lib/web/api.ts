@@ -8,6 +8,8 @@ export interface ApiResponse<T = unknown> {
   status?: number
   /** Set by the API when an account is pending approval or suspended. */
   code?: string
+  /** Returned by the paged list routes — the job feed reads has_more from it. */
+  pagination?: { limit?: number; offset?: number; has_more?: boolean }
 }
 
 /**

@@ -93,7 +93,10 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
     }
     const target = routeForProfile(profile)
     if (target && pathname !== target) { router.replace(target); return }
-    if (!target && (isAuth || isGate) && pathname !== '/') {
+    // The landing page is included: it is written for visitors, and a signed-in
+    // user who reached it was shown "Get Started", which then dropped them into
+    // the app as though they had just signed in.
+    if (!target && (isAuth || isGate)) {
       router.replace(profile.role === 'customer' ? '/home' : '/provider/home')
     }
   }, [loading, profile, pathname, isAuth, isOpen, isGate, router])
@@ -116,7 +119,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
   const homeHref = profile.role === 'customer' ? '/home' : '/provider/home'
 
   const navList = (
-    <nav className="flex-1 space-y-0.5 px-3 py-4">
+    <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
       {nav.map((item) => (
         <Link
           key={item.href}
@@ -173,8 +176,13 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div data-role={profile.role} className="flex min-h-screen">
-      {/* Fixed sidebar from lg — gives the app a frame instead of a floating page. */}
-      <aside className="hidden w-[16.5rem] shrink-0 flex-col border-r border-line bg-surface lg:flex">
+      {/* Pinned from lg: the nav holds still while the page scrolls beside it.
+          h-screen + sticky rather than position:fixed, so the column keeps its
+          place in the flex row and the main area needs no offset. self-start is
+          what makes sticky work at all — a flex child stretches to the full
+          height of the row by default, and something already as tall as its
+          container has nowhere to stick to. */}
+      <aside className="sticky top-0 hidden h-screen w-[16.5rem] shrink-0 flex-col self-start border-r border-line bg-surface print:hidden lg:flex">
         {brand}
         {navList}
         {identity}
@@ -191,7 +199,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col bg-canvas">
-        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-line bg-surface/85 px-4 py-2.5 backdrop-blur-md lg:hidden">
+        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-line bg-surface/85 px-4 py-2.5 backdrop-blur-md print:hidden lg:hidden">
           <button onClick={() => setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen}
             className="rounded-lg p-2 text-ink-70 transition-colors hover:bg-surface-muted">
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -207,11 +215,13 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
           </Link>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-6 sm:px-6 lg:pb-12 lg:pt-9">
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-24 pt-6 print:p-0 sm:px-6 lg:pb-12 lg:pt-9">
           {children}
         </main>
 
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur lg:hidden">
+        {/* Navigation is chrome, not content — a printed receipt should carry
+            none of it, and the tab bar was turning up at the foot of the page. */}
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur print:hidden lg:hidden">
           <div className="flex">
             {tabs.map((item) => (
               <Link key={item.href} href={item.href}
