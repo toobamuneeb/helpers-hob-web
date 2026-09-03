@@ -9,6 +9,7 @@ import {
   Avatar, BackLink, Button, Card, Empty, ErrorNote, Spinner, date,
 } from '@/components/web/ui'
 import type { DayOfWeek } from '@/types/availability'
+import { useT } from '@/lib/i18n'
 
 /**
  * A row from /reviews/[userId].
@@ -57,6 +58,7 @@ export default function ProviderProfilePage({
 }: { params: Promise<{ providerId: string }> }) {
   const { providerId } = use(params)
   const { profile } = useSession()
+  const t = useT()
   const router = useRouter()
 
   const [provider, setProvider] = useState<ProviderProfile | null>(null)
@@ -77,7 +79,7 @@ export default function ProviderProfilePage({
       if (cancelled) return
 
       if (p.success && p.data) setProvider(p.data)
-      else setError(p.error ?? 'Could not load this provider')
+      else setError(p.error ?? t('providers.couldNotLoadThisProvider'))
 
       if (a.success && a.data) {
         const raw = a.data as { slots?: Slot[] } | Slot[]
@@ -101,12 +103,12 @@ export default function ProviderProfilePage({
       service_provider_id: provider.user_id,
     })
     if (res.success && res.data?.chat_id) router.push(`/chats/${res.data.chat_id}`)
-    else setError(res.error ?? 'Could not start the chat')
+    else setError(res.error ?? t('providers.couldNotStartTheChat'))
     setStarting(false)
   }
 
   if (loading) return <Spinner />
-  if (!provider) return <ErrorNote>{error ?? 'Provider not found'}</ErrorNote>
+  if (!provider) return <ErrorNote>{error ?? t('providers.providerNotFound')}</ErrorNote>
 
   const skillNames = (provider.skills ?? [])
     .map((s) => s.name ?? s.skill_name)
@@ -117,7 +119,7 @@ export default function ProviderProfilePage({
 
   return (
     <div className="space-y-5">
-      <BackLink href="/providers">Back</BackLink>
+      <BackLink href="/providers">{t('providers.back')}</BackLink>
       {error && <ErrorNote>{error}</ErrorNote>}
 
       <Card>
@@ -125,10 +127,10 @@ export default function ProviderProfilePage({
           <Avatar src={provider.profile_image_url} name={provider.name} size="lg" />
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold tracking-tight text-ink">
-              {provider.name ?? 'Provider'}
+              {provider.name ?? t('providers.provider')}
             </h1>
             <p className="mt-0.5 text-sm text-ink-70">
-              {provider.average_rating ? `${provider.average_rating} ★` : 'New provider'}
+              {provider.average_rating ? `${provider.average_rating} ★` : t('providers.newProvider')}
               {provider.total_reviews ? ` · ${provider.total_reviews} reviews` : ''}
               {provider.city ? ` · ${provider.city}` : ''}
             </p>
@@ -144,10 +146,10 @@ export default function ProviderProfilePage({
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             <Link href={`/post-job?provider=${provider.user_id}`}>
-              <Button fullWidth>Hire now</Button>
+              <Button fullWidth>{t('providers.hireNow')}</Button>
             </Link>
             <Button variant="outline" fullWidth onClick={startChat} loading={starting}>
-              Chat Now
+              {t('providers.chatNow')}
             </Button>
           </div>
         </div>
@@ -159,9 +161,9 @@ export default function ProviderProfilePage({
         )}
       </Card>
 
-      <Card title="Availability">
+      <Card title={t('providers.availability')}>
         {byDay.length === 0 ? (
-          <Empty title="No availability set" sub="This provider has not published their hours yet." />
+          <Empty title={t('providers.noAvailabilitySet')} sub={t('providers.thisProviderHasNotPublishedTheir')} />
         ) : (
           <dl className="space-y-2 text-sm">
             {byDay.map((g) => (
@@ -178,13 +180,13 @@ export default function ProviderProfilePage({
 
       <Card title={`Reviews${reviews.length ? ` · ${reviews.length}` : ''}`}>
         {reviews.length === 0 ? (
-          <Empty title="No reviews yet" />
+          <Empty title={t('providers.noReviewsYet')} />
         ) : (
           <ul className="space-y-4">
             {reviews.map((r) => (
               <li key={r.review_id} className="border-b border-line-soft pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-semibold text-ink">{r.reviewer_name ?? 'Customer'}</span>
+                  <span className="font-semibold text-ink">{r.reviewer_name ?? t('providers.customer')}</span>
                   <span className="text-sm font-semibold text-accent-role">
                     {scoreOf(r) ? `${scoreOf(r)} ★` : '—'}
                   </span>

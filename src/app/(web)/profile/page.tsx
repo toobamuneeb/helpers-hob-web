@@ -3,32 +3,34 @@
 import Link from 'next/link'
 import { useSession } from '@/lib/web/session'
 import { Avatar, Button, Card, PageTitle } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 export default function ProfilePage() {
+  const t = useT()
   const { profile, isProvider, signOut } = useSession()
   if (!profile) return null
 
   const links = [
-    { href: '/profile/edit', label: 'Edit profile', sub: 'Name, photo, contact details' },
-    { href: '/profile/password', label: 'Change password', sub: 'Update your sign-in password' },
-    { href: '/reviews', label: 'My reviews', sub: 'What people said about you' },
+    { href: '/profile/edit', label: t('profile.editProfile'), sub: t('profile.namePhotoContactDetails') },
+    { href: '/profile/password', label: t('profile.changePassword'), sub: t('profile.updateYourSignInPassword') },
+    { href: '/reviews', label: t('profile.myReviews'), sub: t('profile.whatPeopleSaidAboutYou') },
     ...(isProvider
       ? [
-          { href: '/provider/earnings', label: 'Earnings', sub: 'Payments and payouts' },
-          { href: '/provider/payouts', label: 'Payout account', sub: 'Your Stripe connection' },
+          { href: '/provider/earnings', label: t('profile.earnings'), sub: t('profile.paymentsAndPayouts') },
+          { href: '/provider/payouts', label: t('profile.payoutAccount'), sub: t('profile.yourStripeConnection') },
         ]
       : [
-          { href: '/payments', label: 'Payment history', sub: 'What you have paid, and for what' },
-          { href: '/my-jobs', label: 'My job posts', sub: 'Jobs you posted publicly' },
-          { href: '/offers', label: 'My sent offers', sub: 'Offers awaiting a response' },
+          { href: '/payments', label: t('profile.paymentHistory'), sub: t('profile.whatYouHavePaidAndFor') },
+          { href: '/my-jobs', label: t('profile.myJobPosts'), sub: t('profile.jobsYouPostedPublicly') },
+          { href: '/offers', label: t('profile.mySentOffers'), sub: t('profile.offersAwaitingAResponse') },
         ]),
-    { href: '/help', label: 'Help & support', sub: 'Questions and contact' },
-    { href: '/privacy-policy', label: 'Privacy policy', sub: 'How we handle your data' },
+    { href: '/help', label: t('profile.helpSupport'), sub: t('profile.questionsAndContact') },
+    { href: '/privacy-policy', label: t('profile.privacyPolicy'), sub: t('profile.howWeHandleYourData') },
   ]
 
   return (
     <div className="space-y-5">
-      <PageTitle title="Profile" />
+      <PageTitle title={t('profile.profile')} />
 
       <Card>
         <div className="flex items-center gap-4">
@@ -37,7 +39,7 @@ export default function ProfilePage() {
             <p className="truncate text-lg font-bold text-ink">{profile.name ?? profile.email}</p>
             <p className="truncate text-sm text-ink-70">{profile.email}</p>
             <p className="mt-1 text-xs font-semibold text-accent-role">
-              {isProvider ? 'Service provider' : 'Customer'}
+              {isProvider ? t('profile.serviceProvider') : t('profile.customer')}
             </p>
           </div>
         </div>
@@ -59,7 +61,7 @@ export default function ProfilePage() {
         </ul>
       </Card>
 
-      <Button variant="outline" fullWidth onClick={signOut}>Sign out</Button>
+      <Button variant="outline" fullWidth onClick={signOut}>{t('profile.signOut')}</Button>
     </div>
   )
 }

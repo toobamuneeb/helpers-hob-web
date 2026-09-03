@@ -9,6 +9,7 @@ import { signIn } from '@/lib/web/auth'
 import { useSession } from '@/lib/web/session'
 import type { UserRole } from '@/lib/web/session'
 import { Button, ErrorNote, Field, INPUT_CLASS, PasswordInput } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 function LoginForm() {
   const router = useRouter()
@@ -18,6 +19,7 @@ function LoginForm() {
   const role = (params.get('role') === 'service_provider' ? 'service_provider' : 'customer') as UserRole
   const isProvider = role === 'service_provider'
 
+  const t = useT()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +37,7 @@ function LoginForm() {
       return
     }
     if (!res.success) {
-      setError(res.error ?? 'Login failed')
+      setError(res.error ?? t('auth.loginFailed'))
       setBusy(false)
       return
     }
@@ -51,10 +53,10 @@ function LoginForm() {
     <div data-role={role} className="flex min-h-screen items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-sm">
         <Link href="/role?next=login" className="mb-6 flex flex-col items-center">
-          <Image src="/logo.png" alt="HelpersHob" width={72} height={66} priority className="h-auto" />
+          <Image src="/logo.png" alt={t('auth.helpershob')} width={72} height={66} priority className="h-auto" />
         </Link>
 
-        <h1 className="text-center text-2xl font-bold tracking-tight text-ink">Welcome back</h1>
+        <h1 className="text-center text-2xl font-bold tracking-tight text-ink">{t('auth.welcomeBack')}</h1>
         <p className="mt-1 text-center text-sm text-ink-70">
           Signing in as {isProvider ? 'a service provider' : 'a customer'}
         </p>
@@ -62,7 +64,7 @@ function LoginForm() {
         <form onSubmit={onSubmit} className="mt-7 space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-sm">
           {error && <ErrorNote>{error}</ErrorNote>}
 
-          <Field label="Email" required>
+          <Field label={t('auth.email')} required>
             <input
               type="email"
               required
@@ -73,7 +75,7 @@ function LoginForm() {
             />
           </Field>
 
-          <Field label="Password" required>
+          <Field label={t('auth.password')} required>
             <PasswordInput
               required
               value={password}
@@ -83,21 +85,21 @@ function LoginForm() {
 
           <div className="text-right">
             <Link href={`/forgot-password?role=${role}`} className="text-sm font-semibold text-brand-deep hover:underline">
-              Forgot password?
+              {t('auth.forgotPassword')}
             </Link>
           </div>
 
-          <Button type="submit" size="lg" fullWidth loading={busy}>Sign in</Button>
+          <Button type="submit" size="lg" fullWidth loading={busy}>{t('auth.signIn')}</Button>
         </form>
 
         <p className="mt-5 text-center text-sm text-ink-70">
           Don&apos;t have an account?{' '}
           <Link href={`/signup?role=${role}`} className="font-semibold text-accent-role hover:underline">
-            Sign up
+            {t('auth.signUp')}
           </Link>
         </p>
         <p className="mt-2 text-center text-sm">
-          <Link href="/role?next=login" className="text-ink-50 hover:text-ink">Switch role</Link>
+          <Link href="/role?next=login" className="text-ink-50 hover:text-ink">{t('auth.switchRole')}</Link>
         </p>
       </div>
     </div>

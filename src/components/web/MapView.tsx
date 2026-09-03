@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useT } from '@/lib/i18n'
 
 /**
  * Job location map.
@@ -21,6 +22,7 @@ export default function MapView({
   address?: string | null
   height?: string
 }) {
+  const t = useT()
   const [failed, setFailed] = useState(false)
 
   const latNum = typeof lat === 'string' ? parseFloat(lat) : lat
@@ -35,7 +37,7 @@ export default function MapView({
           <path d="M12 21s7-5.686 7-11a7 7 0 10-14 0c0 5.314 7 11 7 11z" stroke="currentColor" strokeWidth="1.5" />
           <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
         </svg>
-        <p className="text-sm text-ink-70">{address ?? 'No location set'}</p>
+        <p className="text-sm text-ink-70">{address ?? t('ui.noLocationSet')}</p>
       </div>
     )
   }
@@ -48,7 +50,7 @@ export default function MapView({
   return (
     <div className="space-y-2">
       <iframe
-        title={address ?? 'Job location'}
+        title={address ?? t('ui.jobLocation')}
         src={src}
         loading="lazy"
         onError={() => setFailed(true)}
@@ -62,7 +64,7 @@ export default function MapView({
           rel="noreferrer"
           className="shrink-0 text-sm font-semibold text-accent-role hover:underline"
         >
-          Open map
+          {t('ui.openMap')}
         </a>
       </div>
     </div>

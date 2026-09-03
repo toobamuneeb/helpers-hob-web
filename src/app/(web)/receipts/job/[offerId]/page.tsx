@@ -9,6 +9,7 @@ import { useSession } from '@/lib/web/session'
 import {
   BackLink, Badge, Button, Card, ErrorNote, Spinner, date, money,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface Offer {
   offer_id: string
@@ -51,14 +52,14 @@ interface HistoryRow {
  * from a booking, and each of those is the right place to return to.
  */
 function backTo(from: string | null, isProvider: boolean, offerId?: string | null) {
-  if (from === 'earnings') return { href: '/provider/earnings', label: 'Back to Payment History' }
-  if (from === 'jobs') return { href: '/provider/jobs', label: 'Back to Jobs' }
-  if (from === 'bookings') return { href: '/bookings', label: 'Back to Booking/Tasks' }
-  if (from === 'payments') return { href: '/payments', label: 'Back to Payment History' }
-  if (from === 'job' && offerId) return { href: `/jobs/${offerId}`, label: 'Back to the job' }
+  if (from === 'earnings') return { href: '/provider/earnings', labelKey: 'payments.backToPaymentHistory' }
+  if (from === 'jobs') return { href: '/provider/jobs', labelKey: 'payments.backToJobs' }
+  if (from === 'bookings') return { href: '/bookings', labelKey: 'payments.backToBookingTasks' }
+  if (from === 'payments') return { href: '/payments', labelKey: 'payments.backToPaymentHistory' }
+  if (from === 'job' && offerId) return { href: `/jobs/${offerId}`, labelKey: 'payments.backToTheJob' }
   return isProvider
-    ? { href: '/provider/earnings', label: 'Back to Payment History' }
-    : { href: '/bookings', label: 'Back to Booking/Tasks' }
+    ? { href: '/provider/earnings', labelKey: 'payments.backToPaymentHistory' }
+    : { href: '/bookings', labelKey: 'payments.backToBookingTasks' }
 }
 
 export default function CashJobReceiptPage({
@@ -67,6 +68,7 @@ export default function CashJobReceiptPage({
   params: Promise<{ offerId: string }>
 }) {
   const { offerId } = use(params)
+  const t = useT()
   const from = useSearchParams().get('from')
   const { isProvider } = useSession()
 
@@ -84,7 +86,7 @@ export default function CashJobReceiptPage({
       ])
       if (cancelled) return
       if (o.success && o.data) setOffer(o.data)
-      else setError(o.error ?? 'Could not load this job')
+      else setError(o.error ?? t('payments.couldNotLoadThisJob'))
       // The viewer's own subscription for this job, if they have paid one.
       if (h.success && Array.isArray(h.data)) {
         setToken(h.data.find((r) => r.offer_id === offerId) ?? null)
@@ -115,24 +117,24 @@ export default function CashJobReceiptPage({
   return (
     <div className="space-y-5">
       <div className="print:hidden">
-        <BackLink href={back.href}>{back.label}</BackLink>
+        <BackLink href={back.href}>{t(back.labelKey)}</BackLink>
       </div>
 
       <Card bleed>
         <div className="border-b border-line-soft bg-warm px-6 py-5 text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-70">
-            Cash Job Receipt
+            {t('payments.cashJobReceipt')}
           </p>
           <p className="mt-1 text-[1.75rem] font-bold tabular-nums text-ink">
             {money(amount, currency)}
           </p>
           <p className="mt-0.5 text-xs text-ink-70">
-            {isProvider ? 'Received in cash' : 'Paid in cash'}
+            {isProvider ? t('payments.receivedInCash') : t('payments.paidInCash')}
           </p>
           <div className="mt-3 flex flex-wrap justify-center gap-1.5">
             <Badge value={offer.offer_status} />
             <span className="rounded-full bg-warm px-2.5 py-0.5 text-xs font-semibold text-[#9a5b25]">
-              Cash
+              {t('payments.cash')}
             </span>
             {offer.is_recurring && (
               <span className="rounded-full bg-[#e6f1f8] px-2.5 py-0.5 text-xs font-semibold text-secondary">
@@ -153,7 +155,7 @@ export default function CashJobReceiptPage({
             {offer.location_address && (
               <div className="sm:col-span-2">
                 <dt className="text-xs font-semibold uppercase tracking-wide text-ink-50">
-                  Location
+                  {t('payments.location')}
                 </dt>
                 <dd className="mt-0.5 text-sm text-ink">{offer.location_address}</dd>
               </div>
@@ -162,14 +164,13 @@ export default function CashJobReceiptPage({
 
           <dl className="mt-5 space-y-2 border-t border-line-soft pt-4 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-ink-70">Service, paid in cash</dt>
+              <dt className="text-ink-70">{t('payments.servicePaidInCash')}</dt>
               <dd className="font-semibold tabular-nums text-ink">{money(amount, currency)}</dd>
             </div>
           </dl>
 
           <p className="mt-4 text-xs leading-relaxed text-ink-50">
-            This slip covers the service only. It was settled directly between customer and
-            provider — HelpersHob did not handle that money.
+            {t('payments.thisSlipCoversTheServiceOnly')}
           </p>
 
           {/* The platform's fee is a separate transaction with its own receipt,
@@ -180,11 +181,11 @@ export default function CashJobReceiptPage({
                 Monthly subscription · {money(token.total_amount, currency)}
               </p>
               <p className="mt-0.5 text-xs text-ink-70">
-                Charged by HelpersHob for recurring work, separately from this job.
+                {t('payments.chargedByHelpershobForRecurringWork')}
               </p>
               <Link href={`/receipts/${token.payment_id}?from=${from ?? 'job'}`}
                 className="mt-1.5 inline-block text-sm font-semibold text-accent-role hover:underline">
-                View subscription receipt
+                {t('payments.viewSubscriptionReceipt')}
               </Link>
             </div>
           )}

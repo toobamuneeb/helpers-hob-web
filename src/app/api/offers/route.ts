@@ -20,6 +20,9 @@ const createOfferSchema = z.object({
   chat_id:             z.string().uuid().optional(),
   job_id:              z.string().uuid().optional(),
   image_url:           z.string().url().optional(),
+  // Photos are optional and there can be several; image_url stays for older
+  // mobile builds that still send just the one.
+  image_urls:          z.array(z.string().url()).max(10).optional(),
   location_lat:        z.number().optional(),
   location_lng:        z.number().optional(),
   service_duration:    z.string().optional(),
@@ -88,7 +91,8 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
     p_offer_title: d.offer_title, p_service_description: d.service_description,
     p_location_address: d.location_address, p_service_date: d.service_date,
     p_service_time: d.service_time, p_payment_amount: d.payment_amount,
-    p_chat_id: d.chat_id, p_job_id: d.job_id, p_image_url: d.image_url,
+    p_chat_id: d.chat_id, p_job_id: d.job_id,
+    p_image_url: d.image_urls?.[0] ?? d.image_url,
     p_location_lat: d.location_lat, p_location_lng: d.location_lng,
     p_service_duration: d.service_duration, p_currency: d.currency,
     p_pay_through_platform: d.pay_through_platform,
@@ -106,6 +110,20 @@ export const POST = requireAuth(async (request: NextRequest, user) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
   
+  // Same as the job-post route: the RPC takes one image_url, so the rest of the
+  // list is written straight after and the sync trigger keeps the two in step.
+  if (d.image_urls?.length) {
+    const offerId = (data as { offer_id?: string } | null)?.offer_id
+      ?? (Array.isArray(data) ? (data[0] as { offer_id?: string })?.offer_id : undefined)
+    if (offerId) {
+      const { error: imgError } = await supabaseAdmin
+        .from('job_offers')
+        .update({ image_urls: d.image_urls })
+        .eq('offer_id', offerId)
+      if (imgError) logger.error?.('Offer photos not saved', { offerId, error: imgError.message })
+    }
+  }
+
   console.log('✅ Offer created successfully:', data)
   logger.info('Offer created', { userId: user.id, providerId: d.provider_id })
   return new Response(JSON.stringify({ success: true, data }), { status: 201, headers: { 'Content-Type': 'application/json' } })

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { DayOfWeek } from '@/types/availability'
+import { useT } from '@/lib/i18n'
 
 export interface Slot {
   day_of_week: DayOfWeek
@@ -9,14 +10,14 @@ export interface Slot {
   end_time: string
 }
 
-const DAYS: { id: DayOfWeek; label: string }[] = [
-  { id: 'monday', label: 'Monday' },
-  { id: 'tuesday', label: 'Tuesday' },
-  { id: 'wednesday', label: 'Wednesday' },
-  { id: 'thursday', label: 'Thursday' },
-  { id: 'friday', label: 'Friday' },
-  { id: 'saturday', label: 'Saturday' },
-  { id: 'sunday', label: 'Sunday' },
+const DAYS: { id: DayOfWeek; labelKey: string }[] = [
+  { id: 'monday', labelKey: 'ui.monday' },
+  { id: 'tuesday', labelKey: 'ui.tuesday' },
+  { id: 'wednesday', labelKey: 'ui.wednesday' },
+  { id: 'thursday', labelKey: 'ui.thursday' },
+  { id: 'friday', labelKey: 'ui.friday' },
+  { id: 'saturday', labelKey: 'ui.saturday' },
+  { id: 'sunday', labelKey: 'ui.sunday' },
 ]
 
 /**
@@ -30,6 +31,7 @@ export default function AvailabilityPicker({
   slots: Slot[]
   onChange: (slots: Slot[]) => void
 }) {
+  const t = useT()
   const [open, setOpen] = useState<DayOfWeek | null>(null)
 
   const forDay = (day: DayOfWeek) => slots.filter((s) => s.day_of_week === day)
@@ -56,7 +58,7 @@ export default function AvailabilityPicker({
         return (
           <div key={day.id} className="rounded-lg border border-line bg-surface">
             <div className="flex items-center justify-between px-4 py-2.5">
-              <span className="text-sm font-semibold text-ink">{day.label}</span>
+              <span className="text-sm font-semibold text-ink">{t(day.labelKey)}</span>
               {daySlots.length === 0 ? (
                 <button
                   type="button"
@@ -95,7 +97,7 @@ export default function AvailabilityPicker({
                         onClick={() => remove(index)}
                         className="ml-auto text-xs font-semibold text-danger hover:underline"
                       >
-                        Remove
+                        {t('ui.remove')}
                       </button>
                     </div>
                   ),

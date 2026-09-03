@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
 import { Card, Empty, ErrorNote, PageTitle, Spinner, date } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 /**
  * A row from /reviews/[userId].
@@ -31,6 +32,7 @@ function scoreOf(r: Review): number | null {
 
 export default function MyReviewsPage() {
   const { profile, isProvider } = useSession()
+  const t = useT()
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -43,7 +45,7 @@ export default function MyReviewsPage() {
       const res = await api.get<Review[]>(`/reviews/${profile.user_id}?role=${role}&limit=50`)
       if (cancelled) return
       if (res.success) setReviews(Array.isArray(res.data) ? res.data : [])
-      else setError(res.error ?? 'Could not load your reviews')
+      else setError(res.error ?? t('reviews.couldNotLoadYourReviews'))
       setLoading(false)
     })()
     return () => { cancelled = true }
@@ -55,19 +57,19 @@ export default function MyReviewsPage() {
 
   return (
     <div className="space-y-5">
-      <PageTitle title="My reviews"
-        sub={avg ? `${avg} ★ from ${reviews.length} reviews` : 'What people said about you'} />
+      <PageTitle title={t('reviews.myReviews')}
+        sub={avg ? `${avg} ★ from ${reviews.length} reviews` : t('reviews.whatPeopleSaidAboutYou')} />
       {error && <ErrorNote>{error}</ErrorNote>}
 
       <Card>
         {loading ? <Spinner /> : reviews.length === 0 ? (
-          <Empty title="No reviews yet" sub="Reviews appear here once a job is completed." />
+          <Empty title={t('reviews.noReviewsYet')} sub={t('reviews.reviewsAppearHereOnceAJob')} />
         ) : (
           <ul className="space-y-4">
             {reviews.map((r) => (
               <li key={r.review_id} className="border-b border-line-soft pb-4 last:border-0 last:pb-0">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-semibold text-ink">{r.reviewer_name ?? 'Anonymous'}</span>
+                  <span className="font-semibold text-ink">{r.reviewer_name ?? t('reviews.anonymous')}</span>
                   <span className="font-semibold text-accent-role">{scoreOf(r) ? `${scoreOf(r)} ★` : '—'}</span>
                 </div>
                 {r.review_title && <p className="mt-1 text-sm font-medium text-ink">{r.review_title}</p>}

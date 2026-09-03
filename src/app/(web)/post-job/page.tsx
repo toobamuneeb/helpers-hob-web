@@ -7,11 +7,12 @@ import { api } from '@/lib/web/api'
 import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { useSession } from '@/lib/web/session'
 import { uploadImage } from '@/lib/web/storage'
-import ImagePicker from '@/components/web/ImagePicker'
+import MultiImagePicker from '@/components/web/MultiImagePicker'
 import LocationPicker, { type PickedLocation } from '@/components/web/LocationPicker'
 import {
   BackLink, Button, Card, ErrorNote, Field, INPUT_CLASS, PageTitle, money,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface Skill { id: string; name: string }
 
@@ -24,10 +25,10 @@ interface ProviderSkill {
 }
 
 const RECURRENCE = [
-  { id: 'daily', label: 'Daily', sub: 'Every day' },
-  { id: 'weekly', label: 'Weekly', sub: 'Every week' },
-  { id: 'bi-weekly', label: 'Bi-weekly', sub: 'Every 2 weeks' },
-  { id: 'monthly', label: 'Monthly', sub: 'Every month' },
+  { id: 'daily', labelKey: 'jobs.daily', subKey: 'jobs.everyDay' },
+  { id: 'weekly', labelKey: 'jobs.weekly', subKey: 'jobs.everyWeek' },
+  { id: 'bi-weekly', labelKey: 'jobs.biWeekly', subKey: 'jobs.everyWeeks' },
+  { id: 'monthly', labelKey: 'jobs.monthly', subKey: 'jobs.everyMonth' },
 ] as const
 
 const HOURS = [1, 2, 3, 4, 5]
@@ -37,6 +38,7 @@ const HOURS = [1, 2, 3, 4, 5]
 const CUSTOMER_TOKEN = 15
 
 function PostJobForm() {
+  const t = useT()
   const router = useRouter()
   const params = useSearchParams()
   const { profile } = useSession()
@@ -59,7 +61,7 @@ function PostJobForm() {
     recurrenceType: '' as '' | (typeof RECURRENCE)[number]['id'],
     payThroughPlatform: true,
   })
-  const [photo, setPhoto] = useState<File | null>(null)
+  const [photos, setPhotos] = useState<File[]>([])
   const [location, setLocation] = useState<PickedLocation | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -120,33 +122,32 @@ function PostJobForm() {
     e.preventDefault()
     setError(null)
 
-    if (!form.skillId) return setError('Please choose a category')
-    // Required on the web even though the mobile screen lets it through — a job
-    // with no picture is far harder for a provider to price.
-    if (!photo) return setError('Please add a photo of the job')
-    if (!location) return setError('Please pick an address from the suggestions')
-    if (!form.date || !form.time) return setError('Please pick a date and time')
+    if (!form.skillId) return setError(t('jobs.pleaseChooseACategory'))
+    if (!location) return setError(t('jobs.pleasePickAnAddressFromThe'))
+    if (!form.date || !form.time) return setError(t('jobs.pleasePickADateAndTime'))
     // A job in the past cannot be worked. The mobile date picker refuses one
     // with minimumDate, and a `min` on the input below does the same here — but
     // that is only a hint the browser offers, so the real refusal is this one,
     // and it catches a past time on today's date too.
     const when = new Date(`${form.date}T${form.time}`)
-    if (Number.isNaN(when.getTime())) return setError('That date and time do not look right')
+    if (Number.isNaN(when.getTime())) return setError(t('jobs.thatDateAndTimeDoNot'))
     if (when.getTime() <= Date.now()) {
-      return setError('Please pick a date and time in the future')
+      return setError(t('jobs.pleasePickADateAndTime2'))
     }
-    if (serviceAmount <= 0) return setError('Please enter an hourly rate')
-    if (form.isRecurring && !form.recurrenceType) return setError('Please choose how often it repeats')
+    if (serviceAmount <= 0) return setError(t('jobs.pleaseEnterAnHourlyRate'))
+    if (form.isRecurring && !form.recurrenceType) return setError(t('jobs.pleaseChooseHowOftenItRepeats'))
     if (!profile) return
 
     setBusy(true)
     try {
-      let imageUrl: string | undefined
-      if (photo) {
-        // 'job-images', not 'jobs' — the bucket the mobile AddServiceDetail uploads to.
-        const up = await uploadImage(photo, 'job-images', `${profile.user_id}_job_${Date.now()}`)
+      // 'job-images', not 'jobs' — the bucket the mobile AddServiceDetail
+      // uploads to. Uploaded in order so the first pick stays the cover photo,
+      // which is what every card and the offer row show.
+      const imageUrls: string[] = []
+      for (const [i, photo] of photos.entries()) {
+        const up = await uploadImage(photo, 'job-images', `${profile.user_id}_job_${Date.now()}_${i}`)
         if (up.error) { setError(up.error); setBusy(false); return }
-        imageUrl = up.url
+        if (up.url) imageUrls.push(up.url)
       }
 
       // service_date carries the full moment; service_time is the clock time on
@@ -162,7 +163,9 @@ function PostJobForm() {
       const shared = {
         skill_id: form.skillId,
         service_description: form.description,
-        image_url: imageUrl,
+        // image_url keeps older readers working; the trigger mirrors the two.
+        image_url: imageUrls[0],
+        image_urls: imageUrls,
         location_address: location.address,
         // Coordinates drive the provider job feed's distance filter — without
         // them a job is invisible to nearby providers.
@@ -191,69 +194,69 @@ function PostJobForm() {
             job_title: form.jobTitle || undefined,
           })
 
-      if (!res.success) { setError(res.error ?? 'Could not create the job'); setBusy(false); return }
+      if (!res.success) { setError(res.error ?? t('jobs.couldNotCreateTheJob')); setBusy(false); return }
 
       // A sent offer is not a booking until the provider accepts, so it shows up
       // on My Sent Offers — Bookings deliberately excludes unanswered offers.
       router.replace(isHire ? '/offers' : '/job-posted')
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('jobs.somethingWentWrongPleaseTryAgain'))
       setBusy(false)
     }
   }
 
   return (
     <div className="space-y-5">
-      <BackLink href={isHire ? `/providers/${providerId}` : '/home'}>Back</BackLink>
+      <BackLink href={isHire ? `/providers/${providerId}` : '/home'}>{t('jobs.back')}</BackLink>
       <PageTitle
-        title={isHire ? 'Send an offer' : 'Post a job'}
+        title={isHire ? t('jobs.sendAnOffer') : t('jobs.postAJob')}
         sub={isHire
-          ? 'The provider will accept or decline this offer.'
-          : 'Providers near you will see this and can make an offer.'}
+          ? t('jobs.theProviderWillAcceptOrDecline')
+          : t('jobs.providersNearYouWillSeeThis')}
       />
 
       <form onSubmit={onSubmit} className="space-y-5">
         {error && <ErrorNote>{error}</ErrorNote>}
 
-        <Card title="What do you need?">
+        <Card title={t('jobs.whatDoYouNeed')}>
           <div className="space-y-4">
-            <Field label="Category" required
-              hint={skillsAreProviders ? 'The services this provider offers.' : undefined}>
+            <Field label={t('jobs.category')} required
+              hint={skillsAreProviders ? t('jobs.theServicesThisProviderOffers') : undefined}>
               <select required value={form.skillId} onChange={(e) => set('skillId', e.target.value)} className={INPUT_CLASS}>
-                <option value="">Choose a category</option>
+                <option value="">{t('jobs.chooseACategory')}</option>
                 {skills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </Field>
 
-            <Field label="Title" hint="A short summary, e.g. “Fix kitchen cabinet door”.">
+            <Field label={t('jobs.title')} hint={t('jobs.aShortSummaryEGFix')}>
               <input value={form.jobTitle} onChange={(e) => set('jobTitle', e.target.value)} maxLength={60} className={INPUT_CLASS} />
             </Field>
 
-            <Field label="Description" required>
+            <Field label={t('jobs.description')} required>
               <textarea required rows={4} minLength={10} maxLength={1000}
                 value={form.description} onChange={(e) => set('description', e.target.value)}
-                placeholder="Describe the work so providers can quote accurately…" className={INPUT_CLASS} />
+                placeholder={t('jobs.describeTheWorkSoProvidersCan')} className={INPUT_CLASS} />
             </Field>
 
-            <ImagePicker label="Photo" required value={photo} onChange={setPhoto} shape="card"
-              hint="A picture helps providers understand the job." />
+            <MultiImagePicker label={t('jobs.photos')} value={photos} onChange={setPhotos}
+              hint={t('jobs.photosOptionalHint')} />
           </div>
         </Card>
 
-        <Card title="Where and when" allowOverflow>
+        <Card title={t('jobs.whereAndWhen')} allowOverflow>
           <div className="space-y-4">
             <LocationPicker value={location} onChange={setLocation} required />
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Date" required>
+              <Field label={t('jobs.date')} required>
                 <input type="date" required min={today} value={form.date}
                   onChange={(e) => set('date', e.target.value)} className={INPUT_CLASS} />
               </Field>
-              <Field label="Start time" required>
+              <Field label={t('jobs.startTime')} required>
                 <input type="time" required value={form.time} onChange={(e) => set('time', e.target.value)} className={INPUT_CLASS} />
               </Field>
             </div>
 
-            <Field label="How many hours?" required>
+            <Field label={t('jobs.howManyHours')} required>
               <div className="flex flex-wrap gap-2">
                 {HOURS.map((h) => (
                   <button key={h} type="button" onClick={() => set('serviceHours', h)}
@@ -269,7 +272,7 @@ function PostJobForm() {
           </div>
         </Card>
 
-        <Card title="Repeat">
+        <Card title={t('jobs.repeat')}>
           <label className="flex items-center gap-3">
             <input type="checkbox" checked={form.isRecurring}
               onChange={(e) => {
@@ -283,7 +286,7 @@ function PostJobForm() {
                 }))
               }}
               className="h-4 w-4 accent-[var(--color-accent-role)]" />
-            <span className="text-sm font-semibold text-ink">This is a recurring job</span>
+            <span className="text-sm font-semibold text-ink">{t('jobs.thisIsARecurringJob')}</span>
           </label>
 
           {form.isRecurring && (
@@ -293,25 +296,24 @@ function PostJobForm() {
                   <button key={r.id} type="button" onClick={() => set('recurrenceType', r.id)}
                     className={`rounded-lg border p-3 text-left transition-colors ${
                       form.recurrenceType === r.id ? 'border-accent-role bg-accent-soft' : 'border-line hover:border-accent-role'}`}>
-                    <span className="block text-sm font-semibold text-ink">{r.label}</span>
-                    <span className="block text-xs text-ink-50">{r.sub}</span>
+                    <span className="block text-sm font-semibold text-ink">{t(r.labelKey)}</span>
+                    <span className="block text-xs text-ink-50">{t(r.subKey)}</span>
                   </button>
                 ))}
               </div>
               <p className="rounded-lg bg-accent-soft px-3.5 py-2.5 text-xs text-ink-70">
-                The next job is scheduled automatically after each one is completed.
-                It continues until you or the provider request to cancel.
+                {t('jobs.theNextJobIsScheduledAutomatically')}
               </p>
             </div>
           )}
         </Card>
 
         {isHire && (
-          <Card title="Payment">
+          <Card title={t('jobs.payment')}>
             <div className="space-y-2">
               {[
-                { value: true, label: 'Pay through the platform', sub: 'Card payment, protected by HelpersHob.' },
-                { value: false, label: 'Pay the provider in cash', sub: 'Settle directly on the day.' },
+                { value: true, label: t('jobs.payThroughThePlatform'), sub: t('jobs.cardPaymentProtectedByHelpershob') },
+                { value: false, label: t('jobs.payTheProviderInCash'), sub: t('jobs.settleDirectlyOnTheDay') },
               ].map((o) => (
                 <button key={String(o.value)} type="button"
                   disabled={!form.isRecurring && !o.value}
@@ -328,15 +330,15 @@ function PostJobForm() {
                   the service settled in cash. */}
               {!form.isRecurring && (
                 <p className="text-xs text-ink-50">
-                  One-time jobs are paid through the platform. Cash is available on recurring jobs.
+                  {t('jobs.oneTimeJobsArePaidThrough')}
                 </p>
               )}
             </div>
           </Card>
         )}
 
-        <Card title="Price">
-          <Field label="Hourly rate (€)" required>
+        <Card title={t('jobs.price')}>
+          <Field label={t('jobs.hourlyRate')} required>
             <input type="number" min="1" step="0.01" required inputMode="decimal"
               value={form.serviceFee} onChange={(e) => set('serviceFee', e.target.value)}
               placeholder="25.00" className={INPUT_CLASS} />
@@ -354,12 +356,12 @@ function PostJobForm() {
               </div>
               {token > 0 && (
                 <div className="flex justify-between">
-                  <dt className="text-ink-70">Monthly subscription</dt>
+                  <dt className="text-ink-70">{t('jobs.monthlySubscription')}</dt>
                   <dd className="font-medium tabular-nums">{money(token)}</dd>
                 </div>
               )}
               <div className="flex justify-between border-t border-line-soft pt-2 text-base">
-                <dt className="font-semibold text-ink">Total</dt>
+                <dt className="font-semibold text-ink">{t('jobs.total')}</dt>
                 <dd className="font-bold tabular-nums text-accent-role">{money(total)}</dd>
               </div>
             </dl>
@@ -367,7 +369,7 @@ function PostJobForm() {
         </Card>
 
         <Button type="submit" size="lg" fullWidth loading={busy}>
-          {isHire ? 'Send offer' : 'Post job'}
+          {isHire ? t('jobs.sendOffer') : t('jobs.postJob')}
         </Button>
       </form>
     </div>

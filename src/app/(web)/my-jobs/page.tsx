@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/lib/web/api'
 import { Badge, Button, Card, Empty, ErrorNote, PageTitle, CardSkeleton, Thumb, date, money } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
+import JobPhotos from '@/components/web/JobPhotos'
 
 interface JobPost {
   job_id: string
@@ -15,12 +17,16 @@ interface JobPost {
   payment_amount: string
   currency: string | null
   image_url: string | null
+  /** All photos, in order. image_url mirrors the first. */
+  image_urls?: string[] | null
   skill_name?: string | null
+  skill_color?: string | null
   is_recurring?: boolean | null
 }
 
 /** The customer's own public job posts (distinct from booked offers). */
 export default function MyJobsPage() {
+  const t = useT()
   const [jobs, setJobs] = useState<JobPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +35,7 @@ export default function MyJobsPage() {
   async function load() {
     const res = await api.get<JobPost[]>('/jobs/posts?limit=50')
     if (res.success) { setJobs(Array.isArray(res.data) ? res.data : []); setError(null) }
-    else setError(res.error ?? 'Could not load your jobs')
+    else setError(res.error ?? t('jobs.couldNotLoadYourJobs'))
     setLoading(false)
   }
 
@@ -38,10 +44,10 @@ export default function MyJobsPage() {
   // user has already left.
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => { if (!cancelled) void load() }, 0)
+    const timer = setTimeout(() => { if (!cancelled) void load() }, 0)
     return () => {
       cancelled = true
-      clearTimeout(t)
+      clearTimeout(timer)
     }
   }, [])
 
@@ -49,23 +55,23 @@ export default function MyJobsPage() {
     if (!window.confirm('Close this job post? Providers will no longer see it.')) return
     setClosing(jobId)
     const res = await api.post('/jobs/posts/close', { job_id: jobId })
-    if (!res.success) setError(res.error ?? 'Could not close the job')
+    if (!res.success) setError(res.error ?? t('jobs.couldNotCloseTheJob'))
     else await load()
     setClosing(null)
   }
 
   return (
     <div className="space-y-5">
-      <PageTitle title="My jobs" sub="Jobs you posted publicly."
-        action={<Link href="/post-job"><Button>Post a job</Button></Link>} />
+      <PageTitle title={t('jobs.myJobs')} sub={t('jobs.jobsYouPostedPublicly')}
+        action={<Link href="/post-job"><Button>{t('jobs.postAJob')}</Button></Link>} />
 
       {error && <ErrorNote>{error}</ErrorNote>}
 
       {loading ? <CardSkeleton /> : jobs.length === 0 ? (
         <Card>
-          <Empty title="No job posts yet"
-            sub="Post a job and providers near you can send offers."
-            action={<Link href="/post-job"><Button>Post a job</Button></Link>} />
+          <Empty title={t('jobs.noJobPostsYet')}
+            sub={t('jobs.postAJobAndProvidersNear')}
+            action={<Link href="/post-job"><Button>{t('jobs.postAJob')}</Button></Link>} />
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -75,7 +81,8 @@ export default function MyJobsPage() {
               {/* The card opens the post, the way the mobile My Jobs list does.
                   Close stays outside the link so it is not swallowed by it. */}
               <Link href={`/jobs/post/${j.job_id}?from=myjobs`} className="block">
-                {j.image_url && <Thumb src={j.image_url} className="h-32 w-full" />}
+                <JobPhotos urls={j.image_urls ?? (j.image_url ? [j.image_url] : [])}
+                  skill={{ name: j.skill_name, color: j.skill_color }} className="h-32 w-full" />
                 <div className="p-4 pb-0">
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 flex-1 truncate font-semibold text-ink transition-colors group-hover:text-accent-role">
@@ -96,7 +103,7 @@ export default function MyJobsPage() {
                 </span>
                 {j.post_status === 'open' && (
                   <Button size="sm" variant="outline" loading={closing === j.job_id}
-                    onClick={() => close(j.job_id)}>Close Job</Button>
+                    onClick={() => close(j.job_id)}>{t('jobs.closeJob')}</Button>
                 )}
               </div>
             </div>

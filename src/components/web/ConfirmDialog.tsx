@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { Button } from './ui'
+import { useT } from '@/lib/i18n'
 
 /**
  * The web stand-in for the mobile screens' Alert.alert confirmations, so the
@@ -26,6 +27,7 @@ export default function ConfirmDialog({
   onClose: () => void
   onConfirm: () => void | Promise<void>
 }) {
+  const t = useT()
   if (!open) return null
 
   return (
@@ -36,7 +38,7 @@ export default function ConfirmDialog({
         <div className="mt-2 space-y-2 whitespace-pre-line text-sm text-ink-70">{body}</div>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
           <Button variant={tone} fullWidth loading={busy} onClick={() => void onConfirm()}>{cta}</Button>
-          <Button variant="ghost" fullWidth disabled={busy} onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" fullWidth disabled={busy} onClick={onClose}>{t('ui.cancel')}</Button>
         </div>
       </div>
     </div>

@@ -8,8 +8,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { sendPasswordResetOtp } from '@/lib/web/auth'
 import type { UserRole } from '@/lib/web/session'
 import { Button, ErrorNote, Field, INPUT_CLASS } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 function ForgotForm() {
+  const t = useT()
   const router = useRouter()
   const params = useSearchParams()
   const role = (params.get('role') === 'service_provider' ? 'service_provider' : 'customer') as UserRole
@@ -25,7 +27,7 @@ function ForgotForm() {
 
     const res = await sendPasswordResetOtp(email.trim(), role)
     if (!res.success) {
-      setError(res.error ?? 'Could not send the reset code')
+      setError(res.error ?? t('auth.couldNotSendTheResetCode'))
       setBusy(false)
       return
     }
@@ -38,10 +40,10 @@ function ForgotForm() {
     <div data-role={role} className="flex min-h-screen items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center">
-          <Image src="/logo.png" alt="HelpersHob" width={72} height={66} priority className="h-auto" />
+          <Image src="/logo.png" alt={t('auth.helpershob')} width={72} height={66} priority className="h-auto" />
         </div>
 
-        <h1 className="text-center text-2xl font-bold tracking-tight text-ink">Reset your password</h1>
+        <h1 className="text-center text-2xl font-bold tracking-tight text-ink">{t('auth.resetYourPassword')}</h1>
         <p className="mt-1 text-center text-sm text-ink-70">
           We&apos;ll email you a code to set a new one.
         </p>
@@ -49,7 +51,7 @@ function ForgotForm() {
         <form onSubmit={onSubmit} className="mt-7 space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-sm">
           {error && <ErrorNote>{error}</ErrorNote>}
 
-          <Field label="Email" required>
+          <Field label={t('auth.email')} required>
             <input
               type="email"
               required
@@ -60,12 +62,12 @@ function ForgotForm() {
             />
           </Field>
 
-          <Button type="submit" size="lg" fullWidth loading={busy}>Send code</Button>
+          <Button type="submit" size="lg" fullWidth loading={busy}>{t('auth.sendCode')}</Button>
         </form>
 
         <p className="mt-5 text-center text-sm">
           <Link href={`/login?role=${role}`} className="font-semibold text-brand-deep hover:underline">
-            Back to sign in
+            {t('auth.backToSignIn')}
           </Link>
         </p>
       </div>

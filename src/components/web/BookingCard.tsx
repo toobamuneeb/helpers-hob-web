@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { Avatar, Badge, Thumb, date, money } from './ui'
+import JobPhotos from '@/components/web/JobPhotos'
+import { useT } from '@/lib/i18n'
 
 /** Shape the offer RPCs return; fields vary by endpoint, so most are optional. */
 export interface OfferLike {
@@ -19,7 +21,10 @@ export interface OfferLike {
   occurrence_number?: number | null
   pay_through_platform?: boolean | null
   image_url?: string | null
+  /** All photos, in order. image_url mirrors the first. */
+  image_urls?: string[] | null
   skill_name?: string | null
+  skill_color?: string | null
   customer_name?: string | null
   customer_avatar?: string | null
   provider_name?: string | null
@@ -44,19 +49,21 @@ export default function BookingCard({
   /** Replaces the offer_status badge — the Offers list shows the reply status. */
   badge?: React.ReactNode
 }) {
+  const t = useT()
   // Each side sees the other party.
   const personName = role === 'customer' ? offer.provider_name : offer.customer_name
   const personAvatar = role === 'customer' ? offer.provider_avatar : offer.customer_avatar
 
   return (
     <div className="group overflow-hidden rounded-xl border border-line bg-surface transition-all hover:-translate-y-0.5 hover:border-accent-role hover:shadow-md">
-      {offer.image_url && <Thumb src={offer.image_url} className="h-32 w-full" />}
+      <JobPhotos urls={offer.image_urls ?? (offer.image_url ? [offer.image_url] : [])}
+        skill={{ name: offer.skill_name, color: offer.skill_color }} className="h-32 w-full" />
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <Link href={href} className="min-w-0 flex-1">
             <p className="truncate font-bold tracking-tight text-ink transition-colors group-hover:text-accent-role">
-              {offer.offer_title ?? offer.service_description ?? offer.skill_name ?? 'Booking'}
+              {offer.offer_title ?? offer.service_description ?? offer.skill_name ?? t('ui.booking')}
             </p>
           </Link>
           {badge ?? <Badge value={offer.offer_status} />}

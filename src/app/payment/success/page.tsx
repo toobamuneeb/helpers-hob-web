@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { getBrowserSupabase } from '@/lib/supabase-browser';
 import { Suspense, useEffect, useState } from 'react';
+import { useT } from '@/lib/i18n'
 
 
 /**
@@ -14,6 +15,7 @@ import { Suspense, useEffect, useState } from 'react';
  * drops them somewhere they have no business being.
  */
 function useRole(): { role: 'customer' | 'service_provider' | null; signedIn: boolean | null } {
+  const t = useT()
   const [role, setRole] = useState<'customer' | 'service_provider' | null>(null);
   // null while it is still being worked out, so nothing flashes the wrong way.
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -41,6 +43,7 @@ function useRole(): { role: 'customer' | 'service_provider' | null; signedIn: bo
 }
 
 function PaymentSuccessContent() {
+  const t = useT()
   const searchParams = useSearchParams();
   const offerId = searchParams.get('offer_id');
   const paymentId = searchParams.get('payment_id');
@@ -96,7 +99,7 @@ function PaymentSuccessContent() {
           color: '#4CAF50',
           fontWeight: '600'
         }}>
-          Payment Successful!
+          {t('common.paymentSuccessful')}
         </h1>
         
         <p style={{ 
@@ -105,7 +108,7 @@ function PaymentSuccessContent() {
           lineHeight: '1.6',
           marginBottom: '24px'
         }}>
-          Your payment has been completed successfully. The job has been marked as completed.
+          {t('common.yourPaymentHasBeenCompletedSuccessfully')}
         </p>
 
         <div style={{
@@ -121,8 +124,7 @@ function PaymentSuccessContent() {
             margin: 0
           }}>
             <strong>What&apos;s next?</strong><br/>
-            Head back to your booking to leave a review. If you started this from the app,
-            you can close this page instead.
+            {t('common.headBackToYourBookingTo')}
           </p>
         </div>
 
@@ -149,10 +151,10 @@ function PaymentSuccessContent() {
           }}
         >
           {needsSignIn
-            ? 'Sign in to see your booking'
+            ? t('common.signInToSeeYourBooking')
             : isProvider
-              ? (offerId ? 'Back to the job' : 'Back to your jobs')
-              : (offerId ? 'Back to your booking' : 'Back to your bookings')}
+              ? (offerId ? t('common.backToTheJob') : t('common.backToYourJobs'))
+              : (offerId ? t('common.backToYourBooking') : t('common.backToYourBookings'))}
         </a>
 
         {offerId && (

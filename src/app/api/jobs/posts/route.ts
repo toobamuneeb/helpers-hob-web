@@ -20,6 +20,9 @@ const createPostSchema = z.object({
   service_duration:    z.string().optional(),
   payment_amount:      z.number().positive().optional(),
   image_url:           z.string().url().optional(),
+  // Photos are optional and there can be several. image_url stays in the
+  // schema because the mobile app still sends it on older builds.
+  image_urls:          z.array(z.string().url()).max(10).optional(),
   currency:            z.string().length(3).default('EUR'),
   is_recurring:        z.boolean().default(false),
   recurrence_type:     z.enum(['daily','weekly','bi-weekly','monthly']).optional(),
@@ -70,7 +73,7 @@ export const POST = requireRole('customer')(async (request: NextRequest, user) =
     p_location_lat: d.location_lat, p_location_lng: d.location_lng,
     p_service_date: d.service_date, p_service_time: d.service_time,
     p_service_duration: d.service_duration, p_payment_amount: d.payment_amount,
-    p_image_url: d.image_url, p_currency: d.currency,
+    p_image_url: d.image_urls?.[0] ?? d.image_url, p_currency: d.currency,
     p_is_recurring: d.is_recurring, p_recurrence_type: d.recurrence_type,
     p_recurrence_end_date: d.recurrence_end_date
   })
@@ -85,6 +88,23 @@ export const POST = requireRole('customer')(async (request: NextRequest, user) =
     return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } })
   }
   
+  // The RPC only takes a single image_url, and reproducing its body here to add
+  // a parameter would mean guessing at what is actually deployed. The full list
+  // is written straight after instead; the sync trigger keeps image_url in step.
+  if (d.image_urls?.length) {
+    const jobId = (data as { job_id?: string } | null)?.job_id
+      ?? (Array.isArray(data) ? (data[0] as { job_id?: string })?.job_id : undefined)
+    if (jobId) {
+      const { error: imgError } = await supabaseAdmin
+        .from('jobs')
+        .update({ image_urls: d.image_urls })
+        .eq('job_id', jobId)
+      // The post exists and is usable without the extra photos, so this is
+      // logged rather than failed — losing the job over a thumbnail is worse.
+      if (imgError) logger.error?.('Job photos not saved', { jobId, error: imgError.message })
+    }
+  }
+
   console.log('✅ Job post created successfully:', data)
   logger.info('Job post created', { userId: user.id })
   return new Response(JSON.stringify({ success: true, data }), { status: 201, headers: { 'Content-Type': 'application/json' } })

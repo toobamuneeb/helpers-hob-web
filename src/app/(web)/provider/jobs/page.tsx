@@ -6,15 +6,16 @@ import { api } from '@/lib/web/api'
 import { useJobActions, canStart, primaryAction } from '@/lib/web/useJobActions'
 import BookingCard, { type OfferLike } from '@/components/web/BookingCard'
 import { Button, Card, Empty, ErrorNote, PageTitle, CardSkeleton } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 // The mobile Jobs screen's tabs. "Pending" is work accepted but not started;
 // "Active" holds everything under way, right up to the customer's confirmation.
 const TABS = [
-  { id: 'pending', label: 'Pending' },
-  { id: 'active', label: 'Active' },
-  { id: 'completed', label: 'Completed' },
-  { id: 'cancelled', label: 'Cancelled' },
-]
+  { id: 'pending', labelKey: 'jobs.pending' },
+  { id: 'active', labelKey: 'jobs.active' },
+  { id: 'completed', labelKey: 'jobs.completed' },
+  { id: 'cancelled', labelKey: 'jobs.cancelled' },
+] as const
 
 const IN_TAB: Record<string, string[]> = {
   pending: ['scheduled'],
@@ -25,11 +26,12 @@ const IN_TAB: Record<string, string[]> = {
 
 /** Provider's accepted work, with the status actions the lifecycle needs. */
 function ProviderJobs() {
+  const t = useT()
   const search = useSearchParams()
   // Coming back from a job's detail, land on the tab you left from.
   const wanted = search.get('tab')
   const [tab, setTab] = useState(
-    TABS.some((t) => t.id === wanted) ? (wanted as string) : 'pending',
+    TABS.some((item) => item.id === wanted) ? (wanted as string) : 'pending',
   )
 
   const [offers, setOffers] = useState<OfferLike[]>([])
@@ -41,7 +43,7 @@ function ProviderJobs() {
   const load = useCallback(async () => {
     const res = await api.get<OfferLike[]>('/offers?limit=100')
     if (res.success) { setOffers(Array.isArray(res.data) ? res.data : []); setLoadError(null) }
-    else setLoadError(res.error ?? 'Could not load your jobs')
+    else setLoadError(res.error ?? t('provider.couldNotLoadYourJobs'))
     setLoading(false)
   }, [])
 
@@ -50,10 +52,10 @@ function ProviderJobs() {
   // user has already left.
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => { if (!cancelled) void load() }, 0)
+    const timer = setTimeout(() => { if (!cancelled) void load() }, 0)
     return () => {
       cancelled = true
-      clearTimeout(t)
+      clearTimeout(timer)
     }
   }, [load])
 
@@ -79,7 +81,7 @@ function ProviderJobs() {
     if (o.offer_status === 'awaiting_confirmation') {
       return (
         <span className="text-xs font-semibold text-ink-50">
-          Waiting for the customer to confirm and pay
+          {t('jobs.waitingForTheCustomerToConfirm')}
         </span>
       )
     }
@@ -97,14 +99,14 @@ function ProviderJobs() {
 
   return (
     <div className="space-y-5">
-      <PageTitle title="My jobs" sub="Work you have accepted." />
+      <PageTitle title={t('jobs.myJobs')} sub={t('jobs.workYouHaveAccepted')} />
 
       <div className="flex gap-1 overflow-x-auto pb-1">
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+        {TABS.map((item) => (
+          <button key={item.id} onClick={() => setTab(item.id)}
             className={`whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-              tab === t.id ? 'bg-accent-role text-accent-on' : 'text-ink-70 ring-1 ring-inset ring-line hover:bg-accent-soft'}`}>
-            {t.label}
+              tab === item.id ? 'bg-accent-role text-accent-on' : 'text-ink-70 ring-1 ring-inset ring-line hover:bg-accent-soft'}`}>
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
@@ -112,8 +114,8 @@ function ProviderJobs() {
       {error && <ErrorNote>{error}</ErrorNote>}
 
       {loading ? <CardSkeleton /> : shown.length === 0 ? (
-        <Card><Empty title="Nothing here"
-          sub={`No ${TABS.find((t) => t.id === tab)?.label.toLowerCase()} jobs.`} /></Card>
+        <Card><Empty title={t('jobs.nothingHere')}
+          sub={t(`jobs.empty.${tab}`)} /></Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((o) => (

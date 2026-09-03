@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/web/api'
 import PaymentMethodDialog from '@/components/web/PaymentMethodDialog'
 import { BackLink, Button, Card, ErrorNote, PageTitle, Spinner, money } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 /** /api/payments/preview answers at the root, not under `data`. */
 interface Preview {
@@ -42,6 +43,7 @@ interface CreateResult {
  */
 export default function PayPage({ params }: { params: Promise<{ offerId: string }> }) {
   const { offerId } = use(params)
+  const t = useT()
   const router = useRouter()
 
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -63,14 +65,14 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
     }>(`/offers/${offerId}`)
 
     if (!offer.success || !offer.data) {
-      setError(offer.error ?? 'Could not load this job')
+      setError(offer.error ?? t('payments.couldNotLoadThisJob'))
       setLoading(false)
       return
     }
 
     const amount = Number(offer.data.payment_amount ?? 0)
     if (!amount) {
-      setError('This job has no amount to pay.')
+      setError(t('payments.thisJobHasNoAmountTo'))
       setLoading(false)
       return
     }
@@ -84,14 +86,14 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
       })}`,
     )
     if (res.success && res.data) { setPreview(res.data); setError(null) }
-    else setError(res.error ?? 'Could not load the payment details')
+    else setError(res.error ?? t('payments.couldNotLoadThePaymentDetails'))
     setLoading(false)
   }, [offerId])
 
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => { if (!cancelled) void load() }, 0)
-    return () => { cancelled = true; clearTimeout(t) }
+    const timer = setTimeout(() => { if (!cancelled) void load() }, 0)
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [load])
 
   const cashOnly = preview?.pay_through_platform === false
@@ -102,7 +104,7 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
     const res = await api.post<{ status?: string; checkoutUrl?: string }>(
       '/payments/customer-token', { offer_id: offerId, payment_method_id: cardId },
     )
-    if (!res.success) { setError(res.error ?? 'Could not charge the subscription'); return false }
+    if (!res.success) { setError(res.error ?? t('payments.couldNotChargeTheSubscription')); return false }
     if (res.data?.checkoutUrl) { window.location.href = res.data.checkoutUrl; return true }
     return true
   }
@@ -123,7 +125,7 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
       return
     }
     if (!res.success) {
-      setError(res.error ?? 'Could not start the payment')
+      setError(res.error ?? t('payments.couldNotStartThePayment'))
       setBusy(false)
       return
     }
@@ -139,7 +141,7 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
       if (d.customer_token.status === 'already_paid') {
         setChooser(false)
         setBusy(false)
-        setNote(d.message ?? 'This month’s subscription is already paid. Pay the provider in cash, then mark the job complete.')
+        setNote(d.message ?? t('payments.thisMonthSSubscriptionIsAlready'))
         return
       }
       const went = await payToken(cardId)
@@ -162,7 +164,7 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
       return
     }
 
-    setError('The payment could not be started. Please try again.')
+    setError(t('payments.thePaymentCouldNotBeStarted'))
     setBusy(false)
   }
 
@@ -177,11 +179,11 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
 
   return (
     <div className="space-y-5">
-      <BackLink href={`/jobs/${offerId}`}>Back to booking</BackLink>
-      <PageTitle title="Confirm &amp; pay"
+      <BackLink href={`/jobs/${offerId}`}>{t('payments.backToBooking')}</BackLink>
+      <PageTitle title={t('payments.confirmAmpPay')}
         sub={cashOnly
-          ? 'The service is paid in cash; only the subscription is charged here.'
-          : 'Paying releases the job to the provider.'} />
+          ? t('payments.theServiceIsPaidInCash')
+          : t('payments.payingReleasesTheJobToThe')} />
       {error && <ErrorNote>{error}</ErrorNote>}
       {note && (
         <p className="rounded-xl border border-[#e8c3a4] bg-warm px-4 py-3 text-sm font-medium text-[#9a5b25]">
@@ -189,7 +191,7 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
         </p>
       )}
 
-      <Card title="Summary">
+      <Card title={t('payments.summary')}>
         <dl className="space-y-2 text-sm">
           {rows.map(([label, value]) =>
             !value ? null : (
@@ -200,7 +202,7 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
             ),
           )}
           <div className="flex justify-between border-t border-line-soft pt-2 text-base">
-            <dt className="font-semibold text-ink">Total</dt>
+            <dt className="font-semibold text-ink">{t('payments.total')}</dt>
             <dd className="font-bold tabular-nums text-accent-role">{money(total)}</dd>
           </div>
         </dl>
@@ -219,7 +221,7 @@ export default function PayPage({ params }: { params: Promise<{ offerId: string 
       <PaymentMethodDialog
         open={chooser}
         busy={busy}
-        title="How would you like to pay?"
+        title={t('payments.howWouldYouLikeToPay')}
         breakdown={{
           service: preview?.service_amount,
           fee: preview?.platform_fee,

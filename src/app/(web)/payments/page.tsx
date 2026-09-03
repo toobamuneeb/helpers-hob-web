@@ -7,6 +7,7 @@ import { api } from '@/lib/web/api'
 import {
   Badge, Card, Empty, ErrorNote, ListSkeleton, PageTitle, dateTime, money,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface Payment {
   payment_id: string
@@ -46,6 +47,7 @@ interface CompletedOffer {
  * payments row and so cannot come from /payments/history at all.
  */
 export default function CustomerPaymentsPage() {
+  const t = useT()
   const [rows, setRows] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +61,7 @@ export default function CustomerPaymentsPage() {
       ])
       if (cancelled) return
 
-      if (!h.success) setError(h.error ?? 'Could not load your payments')
+      if (!h.success) setError(h.error ?? t('payments.couldNotLoadYourPayments'))
 
       const paid = h.success && h.data
         ? (Array.isArray(h.data) ? h.data : (h.data.payments ?? []))
@@ -109,27 +111,27 @@ export default function CustomerPaymentsPage() {
 
   return (
     <div className="space-y-5">
-      <PageTitle title="Payment History" sub="What you have paid, and what it was for." />
+      <PageTitle title={t('payments.paymentHistory')} sub={t('payments.whatYouHavePaidAndWhat')} />
 
       {error && <ErrorNote>{error}</ErrorNote>}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-line bg-surface px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">Total paid</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">{t('payments.totalPaid')}</p>
           <p className="mt-1.5 text-2xl font-bold tabular-nums text-accent-role">
             {money(total, currency)}
           </p>
         </div>
         <div className="rounded-xl border border-line bg-surface px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">Payments</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">{t('payments.payments')}</p>
           <p className="mt-1.5 text-2xl font-bold tabular-nums text-accent-role">{rows.length}</p>
         </div>
       </div>
 
-      <Card title="Your payments" bleed>
+      <Card title={t('payments.yourPayments')} bleed>
         {loading ? <ListSkeleton /> : rows.length === 0 ? (
-          <Empty title="Nothing paid yet"
-            sub="Receipts appear here once you have paid for a booking." />
+          <Empty title={t('payments.nothingPaidYet')}
+            sub={t('payments.receiptsAppearHereOnceYouHave')} />
         ) : (
           <ul className="divide-y divide-line-soft">
             {rows.map((p) => (
@@ -144,7 +146,7 @@ export default function CustomerPaymentsPage() {
                 >
                   <span className="min-w-0 flex-1 basis-full sm:basis-auto">
                     <span className="block truncate font-semibold text-ink">
-                      {p.job_title ?? 'Booking'}
+                      {p.job_title ?? t('payments.booking')}
                     </span>
                     <span className="block truncate text-xs text-ink-50">
                       {p.provider_name ?? ''} · {dateTime(p.paid_at ?? p.created_at)}
@@ -153,28 +155,28 @@ export default function CustomerPaymentsPage() {
                     <span className="mt-1 flex flex-wrap items-center gap-1.5">
                       {p.kind === 'fee' ? (
                         <span className="rounded bg-surface-muted px-1.5 py-px text-[0.65rem] font-semibold text-ink-70">
-                          Subscription
+                          {t('payments.subscription')}
                         </span>
                       ) : p.is_cash_payment ? (
                         <span className="rounded bg-warm px-1.5 py-px text-[0.65rem] font-semibold text-[#9a5b25]">
-                          Cash
+                          {t('payments.cash')}
                         </span>
                       ) : (
                         <span className="rounded bg-accent-soft px-1.5 py-px text-[0.65rem] font-semibold text-accent-role">
-                          Through the platform
+                          {t('payments.throughThePlatform')}
                         </span>
                       )}
                       {p.is_recurring && (
                         <span className="rounded bg-[#e6f1f8] px-1.5 py-px text-[0.65rem] font-semibold text-secondary">
-                          Recurring
+                          {t('payments.recurring')}
                         </span>
                       )}
                       <span className="text-xs text-ink-50">
                         {p.kind === 'fee'
-                          ? 'Monthly subscription, charged by HelpersHob'
+                          ? t('payments.monthlySubscriptionChargedByHelpershob')
                           : p.is_cash_payment
-                            ? 'Paid directly to the provider'
-                            : 'Paid through the platform'}
+                            ? t('payments.paidDirectlyToTheProvider')
+                            : t('payments.paidThroughThePlatform')}
                       </span>
                     </span>
                   </span>

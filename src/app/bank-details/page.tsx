@@ -4,6 +4,7 @@ import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { api } from '@/lib/web/api';
+import { useT } from '@/lib/i18n'
 
 /**
  * Stripe Connect callback page for React Native WebView
@@ -26,6 +27,7 @@ import { api } from '@/lib/web/api';
  */
 
 function BankDetailsContent() {
+  const t = useT()
   const searchParams = useSearchParams();
   const status = searchParams.get('status') || 'unknown';
   const provider = searchParams.get('provider') || 'stripe';
@@ -70,23 +72,23 @@ function BankDetailsContent() {
       case 'return':
         return {
           icon: '✅',
-          title: 'Successfully Connected!',
-          description: 'Your Stripe account has been connected. You can now receive payouts.',
+          title: t('common.successfullyConnected'),
+          description: t('common.yourStripeAccountHasBeenConnected'),
           color: 'text-green-600',
           bgColor: 'bg-green-50',
         };
       case 'refresh':
         return {
           icon: '🔄',
-          title: 'Session Expired',
-          description: 'Your session expired. Please try connecting again.',
+          title: t('common.sessionExpired'),
+          description: t('common.yourSessionExpiredPleaseTryConnecting'),
           color: 'text-yellow-600',
           bgColor: 'bg-yellow-50',
         };
       case 'error':
         return {
           icon: '❌',
-          title: 'Connection Failed',
+          title: t('common.connectionFailed'),
           description: message || 'Failed to connect your Stripe account. Please try again.',
           color: 'text-red-600',
           bgColor: 'bg-red-50',
@@ -94,7 +96,7 @@ function BankDetailsContent() {
       case 'cancelled':
         return {
           icon: '⚠️',
-          title: 'Connection Cancelled',
+          title: t('common.connectionCancelled'),
           description: message || 'Stripe connection was cancelled.',
           color: 'text-gray-600',
           bgColor: 'bg-gray-50',
@@ -102,8 +104,8 @@ function BankDetailsContent() {
       default:
         return {
           icon: 'ℹ️',
-          title: 'Processing...',
-          description: 'Completing your Stripe connection...',
+          title: t('common.processing'),
+          description: t('common.completingYourStripeConnection'),
           color: 'text-blue-600',
           bgColor: 'bg-blue-50',
         };
@@ -134,11 +136,11 @@ function BankDetailsContent() {
             href="/provider/payouts"
             className="mt-2 inline-block rounded-lg bg-[#2E7D32] px-6 py-2.5 text-sm font-semibold text-white"
           >
-            Go to your payment account
+            {t('common.goToYourPaymentAccount')}
           </a>
 
           <div className="text-sm text-gray-500 mt-8">
-            <p>If you started this from the app, this window closes on its own.</p>
+            <p>{t('common.ifYouStartedThisFromThe')}</p>
           </div>
         </div>
       </div>
@@ -168,13 +170,14 @@ function BankDetailsContent() {
 }
 
 export default function BankDetailsPage() {
+  const t = useT()
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
           <div className="text-center">
             <div className="text-6xl mb-4">⏳</div>
-            <h1 className="text-2xl font-bold mb-4">Processing...</h1>
+            <h1 className="text-2xl font-bold mb-4">{t('common.processing')}</h1>
           </div>
         </div>
       }

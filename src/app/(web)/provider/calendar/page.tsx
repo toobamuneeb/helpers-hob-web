@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/lib/web/api'
 import { Badge, Card, Empty, ErrorNote, PageTitle, Spinner, date, money } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface CalendarOffer {
   offer_id: string
@@ -20,6 +21,7 @@ interface CalendarOffer {
 
 /** Upcoming work grouped by day — the mobile Calendar screen as a list. */
 export default function ProviderCalendarPage() {
+  const t = useT()
   const [offers, setOffers] = useState<CalendarOffer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +41,7 @@ export default function ProviderCalendarPage() {
       )
       if (cancelled) return
       if (res.success) setOffers(Array.isArray(res.data) ? res.data : [])
-      else setError(res.error ?? 'Could not load your calendar')
+      else setError(res.error ?? t('calendar.couldNotLoadYourCalendar'))
       setLoading(false)
     })()
     return () => { cancelled = true }
@@ -55,11 +57,11 @@ export default function ProviderCalendarPage() {
 
   return (
     <div className="space-y-5">
-      <PageTitle title="Calendar" sub="Your next three months." />
+      <PageTitle title={t('calendar.calendar')} sub={t('calendar.yourNextThreeMonths')} />
       {error && <ErrorNote>{error}</ErrorNote>}
 
       {loading ? <Spinner /> : days.length === 0 ? (
-        <Card><Empty title="Nothing scheduled" sub="Accepted jobs will show up here." /></Card>
+        <Card><Empty title={t('calendar.nothingScheduled')} sub={t('calendar.acceptedJobsWillShowUpHere')} /></Card>
       ) : (
         <div className="space-y-5">
           {days.map((day) => (
@@ -74,7 +76,7 @@ export default function ProviderCalendarPage() {
                       </span>
                       <span className="min-w-0 flex-1 basis-full sm:basis-auto">
                         <span className="block truncate font-semibold text-ink">
-                          {o.offer_title ?? o.service_description ?? 'Booking'}
+                          {o.offer_title ?? o.service_description ?? t('provider.booking')}
                         </span>
                         <span className="block truncate text-xs text-ink-50">
                           {o.customer_name ?? ''}{o.service_duration ? ` · ${o.service_duration}` : ''}

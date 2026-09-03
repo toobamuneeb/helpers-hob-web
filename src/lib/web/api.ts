@@ -1,4 +1,8 @@
 import { getBrowserSupabase } from '@/lib/supabase-browser'
+// The i18next instance rather than the hook: this module is not a component,
+// and the instance already carries whatever language the provider set.
+import { i18n } from '@/lib/i18n'
+import { translateServerMessage } from '@/lib/i18n/serverErrors'
 
 
 export interface ApiResponse<T = unknown> {
@@ -59,7 +63,8 @@ export async function apiRequest<T = unknown>(
       return {
         success: false,
         status: res.status,
-        error: body?.error ?? `Request failed (${res.status})`,
+        error: translateServerMessage(body?.error, (k) => i18n.t(k))
+          ?? i18n.t('api.requestFailed', { status: res.status }),
         code: body?.code,
         // Some failures carry a payload that matters — a 402 from
         // mark-complete-provider returns the token the provider still owes.
@@ -77,7 +82,7 @@ export async function apiRequest<T = unknown>(
     }
     return { success: true, data: body as T }
   } catch {
-    return { success: false, error: 'Could not reach the server' }
+    return { success: false, error: i18n.t('api.couldNotReachTheServer') }
   }
 }
 

@@ -6,6 +6,7 @@ import { api } from '@/lib/web/api'
 import {
   Badge, Button, Card, Empty, ErrorNote, PageTitle, Spinner, date, money,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 /** Field names as /api/providers/stripe-status actually returns them. */
 interface StripeStatus {
@@ -47,6 +48,7 @@ interface Earnings {
  * actually gets them.
  */
 export default function PaymentAccountPage() {
+  const t = useT()
   const [status, setStatus] = useState<StripeStatus | null>(null)
   const [earnings, setEarnings] = useState<Earnings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -55,7 +57,7 @@ export default function PaymentAccountPage() {
 
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       void (async () => {
         const [s, e] = await Promise.all([
           api.get<StripeStatus>('/providers/stripe-status'),
@@ -63,12 +65,12 @@ export default function PaymentAccountPage() {
         ])
         if (cancelled) return
         if (s.success && s.data) setStatus(s.data)
-        else setError(s.error ?? 'Could not load your payment account')
+        else setError(s.error ?? t('payments.couldNotLoadYourPaymentAccount'))
         if (e.success && e.data) setEarnings(e.data)
         setLoading(false)
       })()
     }, 0)
-    return () => { cancelled = true; clearTimeout(t) }
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [])
 
   async function onboard() {
@@ -77,7 +79,7 @@ export default function PaymentAccountPage() {
     const res = await api.post<{ onboarding_url?: string; url?: string }>('/providers/onboard-stripe', {})
     const url = res.data?.onboarding_url ?? res.data?.url
     if (res.success && url) window.location.href = url
-    else { setError(res.error ?? 'Could not start Stripe setup'); setStarting(false) }
+    else { setError(res.error ?? t('payments.couldNotStartStripeSetup')); setStarting(false) }
   }
 
   if (loading) return <Spinner />
@@ -91,14 +93,14 @@ export default function PaymentAccountPage() {
 
   // Three states, three calls to action — same as the mobile screen.
   const cta = ready
-    ? { label: 'Reconnect / Change Account', variant: 'outline' as const }
+    ? { label: t('payments.reconnectChangeAccount'), variant: 'outline' as const }
     : started
-      ? { label: 'Complete Stripe Setup', variant: 'accent' as const }
-      : { label: 'Connect with Stripe', variant: 'accent' as const }
+      ? { label: t('payments.completeStripeSetup'), variant: 'accent' as const }
+      : { label: t('payments.connectWithStripe'), variant: 'accent' as const }
 
   return (
     <div className="space-y-5">
-      <PageTitle title="Payment Account" sub="Where HelpersHob sends your money." />
+      <PageTitle title={t('payments.paymentAccount')} sub={t('payments.whereHelpershobSendsYourMoney')} />
       {error && <ErrorNote>{error}</ErrorNote>}
 
       <Card>
@@ -114,14 +116,14 @@ export default function PaymentAccountPage() {
               </span>
               <div>
                 <p className="font-bold tracking-tight text-ink">
-                  {ready ? 'Connected' : started ? 'Setup incomplete' : 'Not Connected'}
+                  {ready ? t('provider.connected') : started ? t('provider.setupIncomplete') : t('provider.notConnected')}
                 </p>
                 <p className="text-sm text-ink-70">
                   {ready
-                    ? 'Your payouts are active.'
+                    ? t('provider.yourPayoutsAreActive')
                     : started
-                      ? 'Finish the Stripe steps to start receiving money.'
-                      : 'Connect a Stripe account to get paid for your jobs.'}
+                      ? t('provider.finishTheStripeStepsToStart')
+                      : t('provider.connectAStripeAccountToGet')}
                 </p>
               </div>
             </div>
@@ -163,17 +165,17 @@ export default function PaymentAccountPage() {
         ))}
       </div>
 
-      <Card title="Recent Payouts" bleed
-        action={<Link href="/provider/earnings" className="text-sm font-semibold text-accent-role hover:underline">Payment History</Link>}>
+      <Card title={t('payments.recentPayouts')} bleed
+        action={<Link href="/provider/earnings" className="text-sm font-semibold text-accent-role hover:underline">{t('payments.paymentHistory')}</Link>}>
         {payouts.length === 0 ? (
-          <Empty title="No payouts yet"
-            sub="Once a customer pays for a completed job, your share is sent to your Stripe account." />
+          <Empty title={t('payments.noPayoutsYet')}
+            sub={t('payments.onceACustomerPaysForA')} />
         ) : (
           <ul className="divide-y divide-line-soft">
             {payouts.slice(0, 6).map((p) => (
               <li key={p.payment_id} className="flex items-center gap-3 px-5 py-3.5">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold text-ink">{p.job_title ?? 'Job payment'}</span>
+                  <span className="block truncate font-semibold text-ink">{p.job_title ?? t('provider.jobPayment')}</span>
                   <span className="block text-xs text-ink-50">
                     {date(p.paid_out_at ?? p.paid_at ?? p.service_date)}
                   </span>
@@ -189,7 +191,7 @@ export default function PaymentAccountPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card title="How It Works">
+        <Card title={t('payments.howItWorks')}>
           <ol className="space-y-3 text-sm text-ink-70">
             {[
               'Connect your Stripe account — it takes a few minutes.',
@@ -206,7 +208,7 @@ export default function PaymentAccountPage() {
           </ol>
         </Card>
 
-        <Card title="Benefits">
+        <Card title={t('payments.benefits')}>
           <ul className="space-y-2.5 text-sm text-ink-70">
             {[
               'Automatic payouts — no invoicing chase',

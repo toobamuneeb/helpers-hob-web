@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { getBrowserSupabase } from '@/lib/supabase-browser';
 import { useEffect, useState, Suspense } from 'react';
+import { useT } from '@/lib/i18n'
 
 
 /** See the success page — no SessionProvider above these, so read it directly. */
@@ -30,6 +31,7 @@ function useRole(): 'customer' | 'service_provider' | null {
 }
 
 function PaymentProcessingContent() {
+  const t = useT()
   const searchParams = useSearchParams();
   const paymentId = searchParams.get('payment_id');
   const offerId = searchParams.get('offer_id');
@@ -145,13 +147,13 @@ function PaymentProcessingContent() {
               animation: 'spin 1s linear infinite'
             }}></div>
             <h1 style={{ fontSize: '24px', marginBottom: '12px', color: '#333' }}>
-              Payment Processing
+              {t('common.paymentProcessing')}
             </h1>
             <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.5' }}>
-              Your payment is being confirmed. Please wait...
+              {t('common.yourPaymentIsBeingConfirmedPlease')}
             </p>
             <p style={{ fontSize: '14px', color: '#999', marginTop: '20px' }}>
-              This usually takes 5-10 seconds. Do not close this page.
+              {t('common.thisUsuallyTakesSecondsDoNot')}
             </p>
             {checkCount > 0 && (
               <p style={{ fontSize: '12px', color: '#ccc', marginTop: '10px' }}>
@@ -178,10 +180,10 @@ function PaymentProcessingContent() {
               ✓
             </div>
             <h1 style={{ fontSize: '24px', marginBottom: '12px', color: '#4CAF50' }}>
-              Payment Successful!
+              {t('common.paymentSuccessful')}
             </h1>
             <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.5' }}>
-              Redirecting to confirmation...
+              {t('common.redirectingToConfirmation')}
             </p>
           </>
         )}
@@ -203,10 +205,10 @@ function PaymentProcessingContent() {
               ✕
             </div>
             <h1 style={{ fontSize: '24px', marginBottom: '12px', color: '#f44336' }}>
-              Payment Taking Too Long
+              {t('common.paymentTakingTooLong')}
             </h1>
             <p style={{ fontSize: '16px', color: '#666', lineHeight: '1.5', marginBottom: '24px' }}>
-              Please check your bookings to see if payment completed, or contact support.
+              {t('common.pleaseCheckYourBookingsToSee')}
             </p>
             {/* Telling someone to check their bookings without a way to get
                 there leaves a browser tab at a dead end. */}
@@ -228,8 +230,8 @@ function PaymentProcessingContent() {
               }}
             >
               {isProvider
-                ? (offerId ? 'Check the job' : 'Check your jobs')
-                : (offerId ? 'Check your booking' : 'Check your bookings')}
+                ? (offerId ? t('common.checkTheJob') : t('common.checkYourJobs'))
+                : (offerId ? t('common.checkYourBooking') : t('common.checkYourBookings'))}
             </a>
           </>
         )}

@@ -14,6 +14,8 @@ import {
   Avatar, BackLink, Badge, Button, Card, ErrorNote, Spinner, Thumb,
   date, money, time,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
+import JobPhotos from '@/components/web/JobPhotos'
 
 /**
  * Shape the API actually returns.
@@ -43,6 +45,8 @@ interface Offer {
   parent_offer_id: string | null
   cancellation_reason: string | null
   image_url: string | null
+  /** All photos, in order. image_url mirrors the first. */
+  image_urls?: string[] | null
   chat_id: string | null
   payment_id: string | null
   payment_status: string | null
@@ -70,6 +74,7 @@ type Source = 'offers' | 'bookings' | 'jobs' | 'calendar'
 const SOURCES: Source[] = ['offers', 'bookings', 'jobs', 'calendar']
 
 function JobDetail({ offerId }: { offerId: string }) {
+  const t = useT()
   const search = useSearchParams()
   const raw = search.get('from')
   const from = SOURCES.includes(raw as Source) ? (raw as Source) : null
@@ -95,16 +100,17 @@ function JobDetail({ offerId }: { offerId: string }) {
   const [cancelOpen, setCancelOpen] = useState(false)
 
   const load = useCallback(async () => {
+  const t = useT()
     const res = await api.get<Offer>(`/offers/${offerId}`)
     if (res.success && res.data) { setOffer(res.data); setLocalError(null) }
-    else setLocalError(res.error ?? 'Could not load this booking')
+    else setLocalError(res.error ?? t('jobs.couldNotLoadThisBooking'))
     setLoading(false)
   }, [offerId])
 
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => { if (!cancelled) void load() }, 0)
-    return () => { cancelled = true; clearTimeout(t) }
+    const timer = setTimeout(() => { if (!cancelled) void load() }, 0)
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [load])
 
   /**
@@ -172,7 +178,7 @@ function JobDetail({ offerId }: { offerId: string }) {
   }
 
   if (loading) return <Spinner />
-  if (!offer) return <ErrorNote>{error ?? 'Booking not found'}</ErrorNote>
+  if (!offer) return <ErrorNote>{error ?? t('jobs.bookingNotFound')}</ErrorNote>
 
   const status = offer.offer_status
   const currency = offer.currency ?? 'EUR'
@@ -185,16 +191,16 @@ function JobDetail({ offerId }: { offerId: string }) {
   // the screen the user will land on.
   const back =
     from === 'offers'
-      ? { href: '/offers', label: isProvider ? 'Back to Pending Offers' : 'Back to My Sent Offers' }
+      ? { href: '/offers', label: isProvider ? t('jobs.backToPendingOffers') : t('jobs.backToMySentOffers') }
       : from === 'bookings'
-        ? { href: withTab('/bookings'), label: 'Back to Booking/Tasks' }
+        ? { href: withTab('/bookings'), label: t('jobs.backToBookingTasks') }
         : from === 'calendar'
-          ? { href: '/provider/calendar', label: 'Back to Calendar' }
+          ? { href: '/provider/calendar', label: t('jobs.backToCalendar') }
           : from === 'jobs'
-            ? { href: withTab('/provider/jobs'), label: 'Back to Jobs' }
+            ? { href: withTab('/provider/jobs'), label: t('jobs.backToJobs2') }
             : isProvider
-              ? { href: '/provider/jobs', label: 'Back to Jobs' }
-              : { href: '/bookings', label: 'Back to Booking/Tasks' }
+              ? { href: '/provider/jobs', label: t('jobs.backToJobs2') }
+              : { href: '/bookings', label: t('jobs.backToBookingTasks') }
 
   // offer_status is 'pending' twice over — for an offer nobody has answered and
   // for a job whose provider is on the way. offer_job_status separates them, so
@@ -227,7 +233,7 @@ function JobDetail({ offerId }: { offerId: string }) {
   // cancelling something that had already happened.
   const customerCanCancel =
     !isProvider && !settled && status !== 'awaiting_confirmation'
-  const customerCancelLabel = unanswered ? 'Cancel Offer' : 'Cancel Booking'
+  const customerCancelLabel = unanswered ? t('jobs.cancelOffer') : t('jobs.cancelBooking')
 
   // Only while the series is live — nothing upcoming to stop from a finished or
   // canceled booking, and a pending offer never started one.
@@ -276,7 +282,8 @@ function JobDetail({ offerId }: { offerId: string }) {
       {error && <ErrorNote>{error}</ErrorNote>}
 
       <Card bleed>
-        {offer.image_url && <Thumb src={offer.image_url} className="h-48 w-full" />}
+        <JobPhotos urls={offer.image_urls ?? (offer.image_url ? [offer.image_url] : [])}
+          skill={{ name: offer.skill_name, color: offer.skill_color }} variant="detail" className="h-64 w-full" />
         <div className="p-5">
           <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
             <div className="min-w-0">
@@ -300,7 +307,7 @@ function JobDetail({ offerId }: { offerId: string }) {
                 )}
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                   offer.pay_through_platform ? 'bg-accent-soft text-ink' : 'bg-warm text-[#9a5b25]'}`}>
-                  {offer.pay_through_platform ? 'Paid through platform' : 'Cash'}
+                  {offer.pay_through_platform ? t('jobs.paidThroughPlatform') : 'Cash'}
                 </span>
                 {/* Recurring tag, as the mobile card and detail both show it. */}
                 {offer.is_recurring && (
@@ -323,7 +330,7 @@ function JobDetail({ offerId }: { offerId: string }) {
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <Card title={isProvider ? 'Customer' : 'Provider'}>
+        <Card title={isProvider ? t('jobs.customer') : t('jobs.provider')}>
           <div className="flex items-center gap-3">
             <Avatar src={otherAvatar} name={otherName} />
             <div className="min-w-0">
@@ -333,7 +340,7 @@ function JobDetail({ offerId }: { offerId: string }) {
               {otherId && (
                 <Link href={isProvider ? `/customers/${otherId}` : `/providers/${otherId}`}
                   className="text-sm font-semibold text-accent-role hover:underline">
-                  View profile
+                  {t('jobs.viewProfile')}
                 </Link>
               )}
             </div>
@@ -341,13 +348,13 @@ function JobDetail({ offerId }: { offerId: string }) {
           <div className="mt-4 border-t border-line-soft pt-4">
             <Link href={offer.chat_id ? `/chats/${offer.chat_id}` : '/chats'}>
               <Button variant="outline" size="sm" fullWidth>
-                {isProvider ? 'Chat with Customer' : 'Chat Now'}
+                {isProvider ? t('jobs.chatWithCustomer') : t('jobs.chatNow')}
               </Button>
             </Link>
           </div>
         </Card>
 
-        <Card title="Details" className="lg:col-span-2">
+        <Card title={t('jobs.details')} className="lg:col-span-2">
           <dl className="grid gap-4 sm:grid-cols-2">
             {([
               ['Service Fee', money(offer.payment_amount, currency)],
@@ -363,26 +370,26 @@ function JobDetail({ offerId }: { offerId: string }) {
           </dl>
           {offer.service_description && (
             <div className="mt-4 border-t border-line-soft pt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">Description</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">{t('jobs.description')}</p>
               <p className="mt-1 whitespace-pre-wrap text-sm text-ink-80">{offer.service_description}</p>
             </div>
           )}
         </Card>
       </div>
 
-      <Card title="Location">
+      <Card title={t('jobs.location')}>
         <MapView lat={offer.location_lat} lng={offer.location_lng} address={offer.location_address} />
       </Card>
 
       {hasActions && (
-        <Card title="Actions">
+        <Card title={t('jobs.actions')}>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap [&>*]:w-full sm:[&>*]:w-auto">
             {/* ── Offer not answered yet (provider) ───────────────────────── */}
             {providerCanAnswer && (
               <>
-                <Button loading={busy} onClick={() => void act('accept')}>Accept</Button>
+                <Button loading={busy} onClick={() => void act('accept')}>{t('jobs.accept')}</Button>
                 <Button variant="outline" disabled={busy}
-                  onClick={() => void act('reject')}>Reject</Button>
+                  onClick={() => void act('reject')}>{t('jobs.reject')}</Button>
               </>
             )}
 
@@ -401,13 +408,13 @@ function JobDetail({ offerId }: { offerId: string }) {
             )}
             {providerLifecycle && status === 'awaiting_confirmation' && (
               <span className="inline-flex items-center justify-center rounded-xl bg-surface-muted px-4 py-2 text-sm font-medium text-ink-50">
-                Awaiting customer confirmation
+                {t('jobs.awaitingCustomerConfirmation')}
               </span>
             )}
             {providerCanCancel && (
               <Button variant="outline" disabled={busy}
                 onClick={() => window.confirm('Cancel this job?') && void act('cancel')}>
-                Cancel
+                {t('jobs.cancel')}
               </Button>
             )}
 
@@ -420,12 +427,12 @@ function JobDetail({ offerId }: { offerId: string }) {
                   <Link href={`/pay/${offer.offer_id}`}><Button>Confirm &amp; Pay</Button></Link>
                 ) : (
                   <Button loading={busy} onClick={() => void jobs.customerCompleteCash(offer)}>
-                    Mark Complete
+                    {t('jobs.markComplete')}
                   </Button>
                 )}
                 <Button variant="outline" disabled={busy}
                   onClick={() => jobs.askNotCompleted(offer.offer_id)}>
-                  Not Completed
+                  {t('jobs.notCompleted')}
                 </Button>
               </>
             )}
@@ -433,8 +440,8 @@ function JobDetail({ offerId }: { offerId: string }) {
               <Button variant="danger" disabled={busy}
                 onClick={() => window.confirm(
                   unanswered
-                    ? 'Cancel this offer?'
-                    : 'Cancel this booking? The provider will be told it is off.',
+                    ? t('jobs.cancelThisOffer')
+                    : t('jobs.cancelThisBookingTheProviderWill'),
                 ) && void act('cancel')}>
                 {customerCancelLabel}
               </Button>
@@ -443,28 +450,28 @@ function JobDetail({ offerId }: { offerId: string }) {
             {/* ── Shared ──────────────────────────────────────────────────── */}
             {canCancelRecurring && (
               <Button variant="outline" disabled={busy} onClick={() => setCancelOpen(true)}>
-                Cancel Recurring Request
+                {t('jobs.cancelRecurringRequest')}
               </Button>
             )}
             {canReview && (
-              <Link href={`/reviews/new/${offer.offer_id}`}><Button>Give a Review</Button></Link>
+              <Link href={`/reviews/new/${offer.offer_id}`}><Button>{t('jobs.giveAReview')}</Button></Link>
             )}
             {/* The payment slip, once there is a payment to show. */}
             {cashReceipt && (
               <Link href={`/receipts/job/${offer.offer_id}?from=job`}>
-                <Button variant="outline">Cash Receipt</Button>
+                <Button variant="outline">{t('jobs.cashReceipt')}</Button>
               </Link>
             )}
             {!cashReceipt && receiptId && (
               <Link href={`/receipts/${receiptId}?from=job`}>
-                <Button variant="outline">Payment Receipt</Button>
+                <Button variant="outline">{t('jobs.paymentReceipt')}</Button>
               </Link>
             )}
             {/* The monthly subscription is charged apart from the work, so it
                 keeps its own slip whether the job was cash or card. */}
             {tokenPaymentId && (
               <Link href={`/receipts/${tokenPaymentId}?from=job`}>
-                <Button variant="outline">Subscription Receipt</Button>
+                <Button variant="outline">{t('jobs.subscriptionReceipt')}</Button>
               </Link>
             )}
           </div>

@@ -1,4 +1,7 @@
 import { getBrowserSupabase } from '@/lib/supabase-browser'
+import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n/config'
+import { i18n } from '@/lib/i18n'
+import { translateAuthError } from '@/lib/i18n/authErrors'
 import { setVerifyingSignIn } from './auth-gate'
 import type { UserRole } from './session'
 
@@ -25,6 +28,8 @@ export async function signUp(
   input: string,
   password: string,
   role: UserRole,
+  /** Language picked on the sign-up form; becomes this account's default. */
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<AuthResult> {
   const supabase = getBrowserSupabase()
 
@@ -50,7 +55,7 @@ export async function signUp(
 
   if (existing) {
     const as = existing.role === 'customer' ? 'a customer' : 'a service provider'
-    return { success: false, error: `An account with this email already exists as ${as}. Sign in instead.` }
+    return { success: false, error: i18n.t('auth.accountExistsAsRole', { role: as }) }
   }
 
   const { data, error } = await supabase.auth.signUp({
@@ -58,8 +63,8 @@ export async function signUp(
     password,
     options: { data: { role } },
   })
-  if (error) return { success: false, error: error.message }
-  if (!data.user) return { success: false, error: 'Signup failed' }
+  if (error) return { success: false, error: translateAuthError(error.message) }
+  if (!data.user) return { success: false, error: i18n.t('auth.signupFailed') }
 
   // When the email is already registered, Supabase does not error — it returns a
   // decoy user with no identities, so an attacker cannot use signup to discover
@@ -68,7 +73,7 @@ export async function signUp(
   if ((data.user.identities?.length ?? 0) === 0) {
     return {
       success: false,
-      error: 'An account with this email already exists. Sign in instead, or use a different email.',
+      error: i18n.t('auth.accountExists'),
     }
   }
 
@@ -78,6 +83,7 @@ export async function signUp(
     email,
     role,
     profile_status: 'pending',
+    preferred_language: locale,
   })
   if (profileError) {
     // Anything left that trips the foreign key is the same underlying cause.
@@ -102,7 +108,7 @@ export async function verifyOtp(
     token,
     type: type === 'signup' ? 'email' : 'recovery',
   })
-  if (error) return { success: false, error: error.message }
+  if (error) return { success: false, error: translateAuthError(error.message) }
   if (!data.user) return { success: false, error: 'Verification failed' }
 
   if (type === 'signup') {
@@ -118,7 +124,7 @@ export async function verifyOtp(
 
 export async function resendOtp(email: string): Promise<AuthResult> {
   const { error } = await getBrowserSupabase().auth.resend({ type: 'signup', email })
-  return error ? { success: false, error: error.message } : { success: true }
+  return error ? { success: false, error: translateAuthError(error.message) } : { success: true }
 }
 
 export async function signIn(
@@ -140,11 +146,11 @@ export async function signIn(
       // instead of a dead end.
       if (/not confirmed/i.test(error.message)) {
         await resendOtp(email)
-        return { success: false, emailNotConfirmed: true, error: error.message }
+        return { success: false, emailNotConfirmed: true, error: translateAuthError(error.message) }
       }
-      return { success: false, error: error.message }
+      return { success: false, error: translateAuthError(error.message) }
     }
-    if (!data.user) return { success: false, error: 'Login failed' }
+    if (!data.user) return { success: false, error: i18n.t('auth.loginFailed') }
 
     if (!data.user.email_confirmed_at) {
       await resendOtp(email)
@@ -191,7 +197,7 @@ export async function sendPasswordResetOtp(
       .maybeSingle()
 
     if (error || !profile) {
-      return { success: false, error: 'No account found with this email address' }
+      return { success: false, error: i18n.t('auth.noAccountFound') }
     }
     if (profile.role !== expectedRole) {
       const actual = profile.role === 'customer' ? 'customer' : 'service provider'
@@ -203,10 +209,10 @@ export async function sendPasswordResetOtp(
   }
 
   const { error } = await supabase.auth.resetPasswordForEmail(email)
-  return error ? { success: false, error: error.message } : { success: true }
+  return error ? { success: false, error: translateAuthError(error.message) } : { success: true }
 }
 
 export async function updatePassword(newPassword: string): Promise<AuthResult> {
   const { error } = await getBrowserSupabase().auth.updateUser({ password: newPassword })
-  return error ? { success: false, error: error.message } : { success: true }
+  return error ? { success: false, error: translateAuthError(error.message) } : { success: true }
 }

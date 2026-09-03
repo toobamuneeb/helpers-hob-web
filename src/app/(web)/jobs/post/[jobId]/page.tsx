@@ -9,6 +9,8 @@ import MapView from '@/components/web/MapView'
 import {
   Avatar, BackLink, Badge, Button, Card, ErrorNote, Spinner, Thumb, date, money, time,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
+import JobPhotos from '@/components/web/JobPhotos'
 
 interface JobPost {
   job_id: string
@@ -27,8 +29,10 @@ interface JobPost {
   is_recurring: boolean | null
   recurrence_type: string | null
   image_url: string | null
+  /** All photos, in order. image_url mirrors the first. */
+  image_urls?: string[] | null
   customer?: { user_id: string; name: string | null; profile_image_url: string | null } | null
-  skill?: { name: string } | null
+  skill?: { name: string; icon?: string | null; color?: string | null } | null
 }
 
 /**
@@ -39,6 +43,7 @@ interface JobPost {
  * the mobile JobDetail does for source 'myjobs'.
  */
 function JobPost({ jobId }: { jobId: string }) {
+  const t = useT()
   const router = useRouter()
   const search = useSearchParams()
   const { profile, loading: sessionLoading } = useSession()
@@ -51,21 +56,21 @@ function JobPost({ jobId }: { jobId: string }) {
   const load = useCallback(async () => {
     const res = await api.get<JobPost>(`/jobs/posts/${jobId}`)
     if (res.success && res.data) { setJob(res.data); setError(null) }
-    else setError(res.error ?? 'Could not load this job')
+    else setError(res.error ?? t('jobs.couldNotLoadThisJob'))
     setLoading(false)
   }, [jobId])
 
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => { if (!cancelled) void load() }, 0)
-    return () => { cancelled = true; clearTimeout(t) }
+    const timer = setTimeout(() => { if (!cancelled) void load() }, 0)
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [load])
 
   async function closePost() {
     if (!window.confirm('Close this job post? Providers will no longer see it.')) return
     setBusy(true)
     const res = await api.post('/jobs/posts/close', { job_id: jobId })
-    if (!res.success) setError(res.error ?? 'Could not close the job')
+    if (!res.success) setError(res.error ?? t('jobs.couldNotCloseTheJob'))
     else await load()
     setBusy(false)
   }
@@ -81,19 +86,19 @@ function JobPost({ jobId }: { jobId: string }) {
       job_title: job.job_title ?? undefined,
     })
     if (res.success && res.data?.chat_id) router.push(`/chats/${res.data.chat_id}`)
-    else setError(res.error ?? 'Could not start the chat')
+    else setError(res.error ?? t('jobs.couldNotStartTheChat'))
     setBusy(false)
   }
 
   if (loading || sessionLoading) return <Spinner />
-  if (!job) return <ErrorNote>{error ?? 'Job not found'}</ErrorNote>
+  if (!job) return <ErrorNote>{error ?? t('jobs.jobNotFound')}</ErrorNote>
 
   // Whoever posted it sees their own listing, not the provider's view of it.
   const ownerId = job.customer_id ?? job.customer?.user_id ?? null
   const isOwner = !!profile && !!ownerId && profile.user_id === ownerId
   const back = search.get('from') === 'myjobs' || isOwner
-    ? { href: '/my-jobs', label: 'Back to My Jobs' }
-    : { href: '/provider/home', label: 'Back to jobs' }
+    ? { href: '/my-jobs', label: t('jobs.backToMyJobs') }
+    : { href: '/provider/home', label: t('jobs.backToJobs') }
 
   return (
     <div className="space-y-5">
@@ -101,7 +106,8 @@ function JobPost({ jobId }: { jobId: string }) {
       {error && <ErrorNote>{error}</ErrorNote>}
 
       <Card bleed>
-        {job.image_url && <Thumb src={job.image_url} className="h-48 w-full" />}
+        <JobPhotos urls={job.image_urls ?? (job.image_url ? [job.image_url] : [])}
+          skill={job.skill ?? undefined} variant="detail" className="h-64 w-full" />
         <div className="p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
@@ -128,11 +134,11 @@ function JobPost({ jobId }: { jobId: string }) {
         </div>
       </Card>
 
-      <Card title="Location">
+      <Card title={t('jobs.location')}>
         <MapView lat={job.location_lat} lng={job.location_lng} address={job.location_address} />
       </Card>
 
-      <Card title="Details">
+      <Card title={t('jobs.details')}>
         <dl className="grid gap-4 sm:grid-cols-2">
           {([
             ['Skill', job.skill?.name ?? null],
@@ -146,42 +152,41 @@ function JobPost({ jobId }: { jobId: string }) {
           ))}
         </dl>
         <div className="mt-4 border-t border-line-soft pt-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">Description</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">{t('jobs.description')}</p>
           <p className="mt-1 whitespace-pre-wrap text-sm text-ink-80">{job.service_description}</p>
         </div>
       </Card>
 
       {isOwner ? (
         job.post_status === 'open' && (
-          <Card title="Actions">
-            <Button variant="outline" loading={busy} onClick={closePost}>Close Job Post</Button>
+          <Card title={t('jobs.actions')}>
+            <Button variant="outline" loading={busy} onClick={closePost}>{t('jobs.closeJobPost')}</Button>
             <p className="mt-3 text-xs text-ink-50">
-              Closing hides the post from providers. Offers you have already
-              accepted are not affected.
+              {t('jobs.closingHidesThePostFromProviders')}
             </p>
           </Card>
         )
       ) : job.customer && (
-        <Card title="Posted by">
+        <Card title={t('jobs.postedBy')}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="flex items-center gap-3">
               <Avatar src={job.customer.profile_image_url} name={job.customer.name} />
               <span className="min-w-0">
                 <span className="block font-semibold text-ink">
-                  {job.customer.name ?? 'Customer'}
+                  {job.customer.name ?? t('jobs.customer')}
                 </span>
                 {/* A provider deciding whether to take the job can look the
                     customer up first, the same way a customer checks them. */}
                 <Link href={`/customers/${job.customer.user_id}`}
                   className="text-sm font-semibold text-accent-role hover:underline">
-                  View profile
+                  {t('jobs.viewProfile')}
                 </Link>
               </span>
             </span>
-            <Button onClick={message} loading={busy}>Message customer</Button>
+            <Button onClick={message} loading={busy}>{t('jobs.messageCustomer')}</Button>
           </div>
           <p className="mt-3 text-xs text-ink-50">
-            Discuss the job in chat — the customer sends you a formal offer from there.
+            {t('jobs.discussTheJobInChatThe')}
           </p>
         </Card>
       )}

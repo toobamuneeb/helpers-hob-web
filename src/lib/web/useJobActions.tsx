@@ -7,6 +7,7 @@ import { api } from './api'
 import ConfirmDialog from '@/components/web/ConfirmDialog'
 import PaymentMethodDialog from '@/components/web/PaymentMethodDialog'
 import { money } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 /** The fields every completion decision reads. */
 export interface ActionableOffer {
@@ -56,6 +57,7 @@ interface Confirm {
  * complete until that month's subscription is settled.
  */
 export function useJobActions(refresh: () => Promise<void>) {
+  const t = useT()
   const router = useRouter()
 
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -79,7 +81,7 @@ export function useJobActions(refresh: () => Promise<void>) {
         setBusyId(null)
         return false
       }
-      setError(res.error ?? 'Could not update this job')
+      setError(res.error ?? t('jobs.couldNotUpdateThisJob'))
       setBusyId(null)
       return false
     }
@@ -96,7 +98,7 @@ export function useJobActions(refresh: () => Promise<void>) {
 
     if (action === 'start') {
       if (!canStart(offer)) {
-        setError('This job can only be started from an hour before its scheduled time.')
+        setError(t('jobs.thisJobCanOnlyBeStarted'))
         return
       }
       await post(offer.offer_id, 'start')
@@ -116,22 +118,22 @@ export function useJobActions(refresh: () => Promise<void>) {
         '/providers/stripe-status',
       )
       setBusyId(null)
-      if (!s.success) { setError(s.error ?? 'Could not verify your payment account'); return }
+      if (!s.success) { setError(s.error ?? t('jobs.couldNotVerifyYourPaymentAccount')); return }
 
       if (!s.data?.connected) {
         setConfirm({
-          title: 'Bank Details Required',
-          body: 'Add your bank account to receive payouts. You will be taken to your payment account to connect Stripe.',
-          cta: 'Add Bank Details',
+          title: t('jobs.bankDetailsRequired'),
+          body: t('jobs.addYourBankAccountToReceive'),
+          cta: t('jobs.addBankDetails'),
           run: async () => { router.push('/provider/payouts') },
         })
         return
       }
       if (!s.data.can_receive_payments) {
         setConfirm({
-          title: 'Complete Stripe Verification',
-          body: 'Your Stripe account needs verification before you can receive payouts. You will be taken there to finish the setup.',
-          cta: 'Complete Verification',
+          title: t('jobs.completeStripeVerification'),
+          body: t('jobs.yourStripeAccountNeedsVerificationBefore'),
+          cta: t('jobs.completeVerification'),
           run: async () => { router.push('/provider/payouts') },
         })
         return
@@ -139,11 +141,11 @@ export function useJobActions(refresh: () => Promise<void>) {
     }
 
     setConfirm({
-      title: 'Confirm Completion',
+      title: t('jobs.confirmCompletion'),
       body: offer.pay_through_platform !== false
-        ? 'Mark this job as completed? The customer will be asked to confirm and pay.'
-        : 'Mark this job as completed? The customer will confirm and pay the platform fee.',
-      cta: 'Mark Completed',
+        ? t('common.markThisJobAsCompletedThe')
+        : t('common.markThisJobAsCompletedThe2'),
+      cta: t('jobs.markCompleted'),
       run: async () => { await post(offer.offer_id, 'mark-complete-provider') },
     })
   }
@@ -156,7 +158,7 @@ export function useJobActions(refresh: () => Promise<void>) {
       '/payments/provider-token', { offer_id: offerId, payment_method_id: cardId },
     )
     if (!res.success) {
-      setError(res.error ?? 'Could not charge the monthly token')
+      setError(res.error ?? t('jobs.couldNotChargeTheMonthlyToken'))
       setBusyId(null)
       return
     }
@@ -177,9 +179,9 @@ export function useJobActions(refresh: () => Promise<void>) {
 
     if (!offer.is_recurring) {
       setConfirm({
-        title: 'Complete Job',
+        title: t('jobs.completeJob'),
         body: `Pay ${cash} in cash to the provider.`,
-        cta: 'Mark Complete',
+        cta: t('jobs.markComplete'),
         run: async () => { await post(offer.offer_id, 'complete') },
       })
       return
@@ -190,13 +192,13 @@ export function useJobActions(refresh: () => Promise<void>) {
       '/payments/create', { offer_id: offer.offer_id },
     )
     setBusyId(null)
-    if (!res.success) { setError(res.error ?? 'Could not check the subscription'); return }
+    if (!res.success) { setError(res.error ?? t('jobs.couldNotCheckTheSubscription')); return }
 
     if (res.data?.customer_token?.status === 'already_paid') {
       setConfirm({
-        title: 'Complete Job',
+        title: t('jobs.completeJob'),
         body: `Pay ${cash} in cash to the provider.\n\nThis month's subscription is already paid.`,
-        cta: 'Mark Complete',
+        cta: t('jobs.markComplete'),
         run: async () => { await post(offer.offer_id, 'complete') },
       })
       return
@@ -212,7 +214,7 @@ export function useJobActions(refresh: () => Promise<void>) {
       '/payments/customer-token', { offer_id: offer.offer_id, payment_method_id: cardId },
     )
     if (!res.success) {
-      setError(res.error ?? 'Could not charge the subscription')
+      setError(res.error ?? t('jobs.couldNotChargeTheSubscription'))
       setBusyId(null)
       return
     }
@@ -224,9 +226,9 @@ export function useJobActions(refresh: () => Promise<void>) {
 
   function askNotCompleted(offerId: string) {
     setConfirm({
-      title: 'Mark Not Completed',
-      body: 'Mark this job as not completed? It will return to active status.',
-      cta: 'Not Completed',
+      title: t('jobs.markNotCompleted'),
+      body: t('jobs.markThisJobAsNotCompleted'),
+      cta: t('jobs.notCompleted'),
       tone: 'danger',
       run: async () => { await post(offerId, 'mark-not-completed') },
     })
@@ -239,7 +241,7 @@ export function useJobActions(refresh: () => Promise<void>) {
         busy={busyId !== null}
         title={confirm?.title ?? ''}
         body={confirm?.body ?? ''}
-        cta={confirm?.cta ?? 'Confirm'}
+        cta={confirm?.cta ?? t('common.confirm')}
         tone={confirm?.tone}
         onClose={() => setConfirm(null)}
         onConfirm={async () => {
@@ -252,7 +254,7 @@ export function useJobActions(refresh: () => Promise<void>) {
       <PaymentMethodDialog
         open={providerToken !== null}
         busy={busyId !== null}
-        title="Monthly subscription due"
+        title={t('jobs.monthlySubscriptionDue')}
         breakdown={{ token: 5, total: 5 }}
         onClose={() => setProviderToken(null)}
         onSelect={(cardId) => { if (providerToken) void payProviderToken(providerToken, cardId) }}
@@ -261,7 +263,7 @@ export function useJobActions(refresh: () => Promise<void>) {
       <PaymentMethodDialog
         open={customerToken !== null}
         busy={busyId !== null}
-        title="Monthly subscription due"
+        title={t('jobs.monthlySubscriptionDue')}
         breakdown={{
           token: 15,
           total: 15,

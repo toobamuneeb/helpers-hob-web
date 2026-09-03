@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
 import { BackLink, Button, Card, ErrorNote, Field, INPUT_CLASS, PageTitle } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 function Stars({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
@@ -22,14 +23,15 @@ function Stars({ value, onChange }: { value: number; onChange: (v: number) => vo
 
 /** The parts the customer endpoint scores separately, in its own order. */
 const DETAIL_RATINGS = [
-  { key: 'skill', label: 'Quality of work' },
-  { key: 'communication', label: 'Communication' },
-  { key: 'punctuality', label: 'Punctuality' },
-  { key: 'professionalism', label: 'Professionalism' },
+  { key: 'skill', labelKey: 'reviews.qualityOfWork' },
+  { key: 'communication', labelKey: 'reviews.communication' },
+  { key: 'punctuality', labelKey: 'reviews.punctuality' },
+  { key: 'professionalism', labelKey: 'reviews.professionalism' },
 ] as const
 
 export default function NewReviewPage({ params }: { params: Promise<{ offerId: string }> }) {
   const { offerId } = use(params)
+  const t = useT()
   const router = useRouter()
   const { isProvider } = useSession()
 
@@ -47,9 +49,9 @@ export default function NewReviewPage({ params }: { params: Promise<{ offerId: s
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (rating === 0) return setError('Please choose a rating')
+    if (rating === 0) return setError(t('reviews.pleaseChooseARating'))
     if (!isProvider && Object.values(detail).some((v) => v === 0)) {
-      return setError('Please rate each part of the service')
+      return setError(t('reviews.pleaseRateEachPartOfThe'))
     }
     setBusy(true)
     setError(null)
@@ -75,40 +77,40 @@ export default function NewReviewPage({ params }: { params: Promise<{ offerId: s
           review_text: text || undefined,
         })
 
-    if (!res.success) { setError(res.error ?? 'Could not submit your review'); setBusy(false); return }
+    if (!res.success) { setError(res.error ?? t('reviews.couldNotSubmitYourReview')); setBusy(false); return }
     router.replace(`/jobs/${offerId}`)
   }
 
   return (
     <div className="space-y-5">
-      <BackLink href={`/jobs/${offerId}`}>Back to booking</BackLink>
-      <PageTitle title="Leave a review"
-        sub={isProvider ? 'How was working with this customer?' : 'How did the provider do?'} />
+      <BackLink href={`/jobs/${offerId}`}>{t('reviews.backToBooking')}</BackLink>
+      <PageTitle title={t('reviews.leaveAReview')}
+        sub={isProvider ? t('reviews.howWasWorkingWithThisCustomer') : t('reviews.howDidTheProviderDo')} />
 
       <Card>
         <form onSubmit={onSubmit} className="space-y-4">
           {error && <ErrorNote>{error}</ErrorNote>}
-          <Field label={isProvider ? 'Rating' : 'Overall rating'} required>
+          <Field label={isProvider ? t('reviews.rating') : t('reviews.overallRating')} required>
             <Stars value={rating} onChange={setRating} />
           </Field>
 
           {!isProvider && DETAIL_RATINGS.map((d) => (
-            <Field key={d.key} label={d.label} required>
+            <Field key={d.key} label={t(d.labelKey)} required>
               <Stars
                 value={detail[d.key]}
                 onChange={(v) => setDetail((prev) => ({ ...prev, [d.key]: v }))}
               />
             </Field>
           ))}
-          <Field label="Title">
+          <Field label={t('reviews.title')}>
             <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
-              placeholder="Summarise your experience" className={INPUT_CLASS} />
+              placeholder={t('reviews.summariseYourExperience')} className={INPUT_CLASS} />
           </Field>
-          <Field label="Review">
+          <Field label={t('reviews.review')}>
             <textarea rows={4} value={text} onChange={(e) => setText(e.target.value)}
-              placeholder="Share details about your experience…" className={INPUT_CLASS} />
+              placeholder={t('reviews.shareDetailsAboutYourExperience')} className={INPUT_CLASS} />
           </Field>
-          <Button type="submit" fullWidth loading={busy}>Submit review</Button>
+          <Button type="submit" fullWidth loading={busy}>{t('reviews.submitReview')}</Button>
         </form>
       </Card>
     </div>

@@ -5,6 +5,7 @@
 // Colours come from the tokens appended to globals.css.
 import Link from 'next/link'
 import { useState, type ReactNode } from 'react'
+import { useT } from '@/lib/i18n'
 
 // ── layout ──────────────────────────────────────────────────────────────────
 
@@ -367,11 +368,13 @@ export function ListSkeleton({ rows = 5 }: { rows?: number }) {
   )
 }
 
-export function Spinner({ label = 'Loading…' }: { label?: string }) {
+export function Spinner({ label }: { label?: string }) {
+  const t = useT()
+
   return (
     <div className="flex items-center justify-center gap-3 py-16 text-sm text-ink-50">
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand-deep" />
-      {label}
+      {label ?? t('ui.loading')}
     </div>
   )
 }
@@ -442,6 +445,7 @@ export function PasswordInput({
   disabled?: boolean
   className?: string
 }) {
+  const t = useT()
   const [shown, setShown] = useState(false)
 
   return (
@@ -461,7 +465,7 @@ export function PasswordInput({
         type="button"
         onClick={() => setShown((s) => !s)}
         disabled={disabled}
-        aria-label={shown ? 'Hide password' : 'Show password'}
+        aria-label={shown ? t('ui.hidePassword') : t('ui.showPassword')}
         className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink-50 transition-colors hover:text-ink-70 disabled:opacity-50"
       >
         <svg viewBox="0 0 24 24" fill="none" className="h-[1.15rem] w-[1.15rem]">

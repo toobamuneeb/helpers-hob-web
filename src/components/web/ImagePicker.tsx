@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { validateImage } from '@/lib/web/storage'
+import { useT } from '@/lib/i18n'
 
 /**
  * Click-to-pick image field with a live preview.
@@ -27,6 +28,7 @@ export default function ImagePicker({
   shape?: 'circle' | 'card'
   error?: string
 }) {
+  const t = useT()
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [localError, setLocalError] = useState<string | null>(null)
@@ -78,7 +80,7 @@ export default function ImagePicker({
                 strokeLinejoin="round"
               />
             </svg>
-            <span className="text-xs font-medium">Upload</span>
+            <span className="text-xs font-medium">{t('ui.upload')}</span>
           </span>
         )}
       </button>
@@ -97,7 +99,7 @@ export default function ImagePicker({
           onClick={() => pick(null)}
           className="mt-1.5 block text-xs font-semibold text-danger hover:underline"
         >
-          Remove
+          {t('ui.remove')}
         </button>
       )}
 

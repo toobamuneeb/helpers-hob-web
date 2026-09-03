@@ -7,6 +7,7 @@ import { useSession } from '@/lib/web/session'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Avatar, BackLink, Button, ErrorNote, INPUT_CLASS, Spinner, dateTime } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface ChatMeta {
   recipient_id?: string | null
@@ -26,6 +27,7 @@ interface Message {
 export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
   const { chatId } = use(params)
   const { profile, isCustomer, isProvider } = useSession()
+  const t = useT()
   const router = useRouter()
   const [meta, setMeta] = useState<ChatMeta | null>(null)
 
@@ -45,7 +47,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
       setMessages([...list].reverse())
       setError(null)
     } else {
-      setError(res.error ?? 'Could not load this conversation')
+      setError(res.error ?? t('chat.couldNotLoadThisConversation'))
     }
     setLoading(false)
   }, [chatId])
@@ -118,7 +120,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
       message_type: 'text',
     })
     if (res.success) { setText(''); await load() }
-    else setError(res.error ?? 'Message not sent')
+    else setError(res.error ?? t('chat.messageNotSent'))
     setSending(false)
   }
 
@@ -128,7 +130,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
     // breakpoint because the mobile header and bottom tabs only exist below lg.
     <div className="flex h-[calc(100dvh-14rem)] min-h-[24rem] flex-col lg:h-[calc(100dvh-11rem)]">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <BackLink href="/chats">Back to chats</BackLink>
+        <BackLink href="/chats">{t('chat.backToChats')}</BackLink>
 
         {/* Mobile shows "Hire now" in the chat header for customers only, and
             carries the provider into the offer form. Same here. */}
@@ -141,7 +143,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
               )
             }
           >
-            Hire now
+            {t('chat.hireNow')}
           </Button>
         )}
       </div>
@@ -168,7 +170,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
       <div className="flex-1 overflow-y-auto rounded-xl border border-line bg-surface p-4">
         {loading ? <Spinner /> : messages.length === 0 ? (
           <p className="py-16 text-center text-sm text-ink-50">
-            No messages yet. Start the conversation!
+            {t('chat.noMessagesYetStartTheConversation')}
           </p>
         ) : (
           <ul className="space-y-3">
@@ -193,8 +195,8 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
       <form onSubmit={send} className="mt-3 flex gap-2">
         <input value={text} onChange={(e) => setText(e.target.value)}
-          placeholder="Type a message" maxLength={2000} className={INPUT_CLASS} />
-        <Button type="submit" loading={sending} disabled={!text.trim()}>Send</Button>
+          placeholder={t('chat.typeAMessage')} maxLength={2000} className={INPUT_CLASS} />
+        <Button type="submit" loading={sending} disabled={!text.trim()}>{t('chat.send')}</Button>
       </form>
     </div>
   )

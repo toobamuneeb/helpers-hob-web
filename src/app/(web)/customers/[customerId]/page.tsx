@@ -8,6 +8,7 @@ import { useSession } from '@/lib/web/session'
 import {
   Avatar, BackLink, Card, Empty, ErrorNote, Spinner, date,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 /** Shape of get_customer_profile, which /api/profiles/customer/[id] returns. */
 interface CustomerProfile {
@@ -60,6 +61,7 @@ export default function CustomerProfilePage({
   params: Promise<{ customerId: string }>
 }) {
   const { customerId } = use(params)
+  const t = useT()
   const router = useRouter()
   const { profile, isProvider, loading: sessionLoading } = useSession()
 
@@ -83,7 +85,7 @@ export default function CustomerProfilePage({
       ])
       if (cancelled) return
       if (p.success && p.data) setCustomer(p.data)
-      else setError(p.error ?? 'Could not load this customer')
+      else setError(p.error ?? t('providers.couldNotLoadThisCustomer'))
       if (r.success && Array.isArray(r.data)) setReviews(r.data)
       setLoading(false)
     })()
@@ -98,7 +100,7 @@ export default function CustomerProfilePage({
 
   return (
     <div className="space-y-5">
-      <BackLink href="/provider/jobs">Back to Jobs</BackLink>
+      <BackLink href="/provider/jobs">{t('providers.backToJobs')}</BackLink>
 
       <Card>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -106,14 +108,14 @@ export default function CustomerProfilePage({
 
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold tracking-tight text-ink">
-              {customer.name ?? 'Customer'}
+              {customer.name ?? t('providers.customer')}
             </h1>
             {place && <p className="mt-0.5 text-sm text-ink-50">{place}</p>}
 
             <p className="mt-2 text-sm text-ink-70">
               {customer.average_rating != null
                 ? `★ ${customer.average_rating.toFixed(1)}`
-                : 'No rating yet'}
+                : t('providers.noRatingYet')}
               {customer.total_reviews ? ` · ${customer.total_reviews} reviews` : ''}
               {customer.total_jobs_posted
                 ? ` · ${customer.total_jobs_posted} ${customer.total_jobs_posted === 1 ? 'job' : 'jobs'} posted`
@@ -127,17 +129,17 @@ export default function CustomerProfilePage({
         </div>
       </Card>
 
-      <Card title="Reviews">
+      <Card title={t('providers.reviews')}>
         {reviews.length === 0 ? (
-          <Empty title="No reviews yet"
-            sub="Reviews appear here once providers have worked with this customer." />
+          <Empty title={t('providers.noReviewsYet')}
+            sub={t('providers.reviewsAppearHereOnceProvidersHave')} />
         ) : (
           <ul className="space-y-4">
             {reviews.map((r) => (
               <li key={r.review_id} className="border-b border-line-soft pb-4 last:border-0 last:pb-0">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-semibold text-ink">
-                    {r.review_title ?? r.reviewer_name ?? 'Review'}
+                    {r.review_title ?? r.reviewer_name ?? t('providers.review')}
                   </span>
                   {scoreOf(r) != null && (
                     <span className="shrink-0 text-sm font-semibold text-ink-70">★ {scoreOf(r)}</span>

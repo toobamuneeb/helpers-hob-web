@@ -8,6 +8,8 @@ import StatTile from '@/components/web/StatTile'
 import {
   Avatar, Button, Card, Empty, ErrorNote, PageTitle, CardSkeleton, Thumb, date, money,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
+import JobPhotos from '@/components/web/JobPhotos'
 
 interface Earnings { total_earned?: number; pending_amount?: number; currency?: string }
 
@@ -36,23 +38,26 @@ interface FeedJob {
   customer_avatar: string | null
   is_recurring: boolean | null
   image_url: string | null
+  /** All photos, in order. image_url mirrors the first. */
+  image_urls?: string[] | null
   distance_km: number | null
 }
 
 
 /** The mobile home's filter steps, in the same order, ending in "All". */
-const DISTANCES: { label: string; value: number | null }[] = [
-  { label: '5 km', value: 5 },
-  { label: '10 km', value: 10 },
-  { label: '15 km', value: 15 },
-  { label: '25 km', value: 25 },
-  { label: '50 km', value: 50 },
-  { label: 'All', value: null },
+const DISTANCES: { labelKey: string; value: number | null }[] = [
+  { labelKey: 'provider.km5', value: 5 },
+  { labelKey: 'provider.km10', value: 10 },
+  { labelKey: 'provider.km15', value: 15 },
+  { labelKey: 'provider.km25', value: 25 },
+  { labelKey: 'provider.km50', value: 50 },
+  { labelKey: 'provider.all', value: null },
 ]
 
 /** Provider home: the open job feed, distance-filtered by the API. */
 export default function ProviderHomePage() {
   const { profile } = useSession()
+  const t = useT()
   const [jobs, setJobs] = useState<FeedJob[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -108,7 +113,7 @@ export default function ProviderHomePage() {
       setJobs(Array.isArray(feed.data) ? feed.data : [])
       setHasMore(feed.pagination?.has_more === true)
       setError(null)
-    } else setError(feed.error ?? 'Could not load the job feed')
+    } else setError(feed.error ?? t('provider.couldNotLoadTheJobFeed'))
     if (earn.success && earn.data) setEarnings(earn.data)
     if (act.success && Array.isArray(act.data) && act.data.length > 0) setActive(act.data[0])
     setLoading(false)
@@ -121,7 +126,7 @@ export default function ProviderHomePage() {
     if (res.success && Array.isArray(res.data)) {
       setJobs((prev) => [...prev, ...res.data!])
       setHasMore(res.pagination?.has_more === true)
-    } else setError(res.error ?? 'Could not load more jobs')
+    } else setError(res.error ?? t('provider.couldNotLoadMoreJobs'))
     setLoadingMore(false)
   }
 
@@ -130,17 +135,17 @@ export default function ProviderHomePage() {
   // user has already left.
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => { if (!cancelled) void load() }, 0)
+    const timer = setTimeout(() => { if (!cancelled) void load() }, 0)
     return () => {
       cancelled = true
-      clearTimeout(t)
+      clearTimeout(timer)
     }
   }, [load])
 
   async function skip(jobId: string) {
     setSkipping(jobId)
     const res = await api.post('/jobs/skip', { job_id: jobId })
-    if (!res.success) setError(res.error ?? 'Could not skip this job')
+    if (!res.success) setError(res.error ?? t('provider.couldNotSkipThisJob'))
     else setJobs((j) => j.filter((x) => x.job_id !== jobId))
     setSkipping(null)
   }
@@ -148,40 +153,40 @@ export default function ProviderHomePage() {
   return (
     <div className="space-y-5">
       <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-accent-soft via-canvas to-warm p-6 sm:p-8">
-        <p className="text-sm font-medium text-ink-70">Welcome back</p>
+        <p className="text-sm font-medium text-ink-70">{t('provider.welcomeBack')}</p>
         <h1 className="mt-0.5 text-[1.75rem] font-bold leading-tight tracking-[-0.02em] text-ink">
           {profile?.name ?? 'there'}
         </h1>
         <p className="mt-1.5 max-w-md text-sm leading-relaxed text-ink-70">
-          Open jobs near you, matched to your skills and travel distance.
+          {t('provider.openJobsNearYouMatchedTo')}
         </p>
       </section>
 
       <div className="grid gap-3 xs:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <StatTile
-          label="Total Earnings" icon="wallet" tone="accent" href="/provider/earnings"
+          label={t('provider.totalEarnings')} icon="wallet" tone="accent" href="/provider/earnings"
           value={money(earnings?.total_earned ?? 0, earnings?.currency ?? 'EUR')}
-          sub="View All →"
+          sub={t('provider.viewAll')}
         />
         <StatTile
-          label="Pending" icon="clock" tone="warm" href="/provider/payouts"
+          label={t('provider.pending')} icon="clock" tone="warm" href="/provider/payouts"
           value={money(earnings?.pending_amount ?? 0, earnings?.currency ?? 'EUR')}
-          sub="Being processed"
+          sub={t('provider.beingProcessed')}
         />
         <StatTile
-          label="Active Job" icon="spark" tone="blue"
+          label={t('provider.activeJob')} icon="spark" tone="blue"
           href={active ? `/jobs/${active.offer_id}?from=jobs` : '/provider/jobs'}
           value={active ? money(active.payment_amount, active.currency ?? 'EUR') : '—'}
-          sub={active ? (active.offer_title ?? 'In progress') : 'Nothing in progress'}
+          sub={active ? (active.offer_title ?? t('provider.inProgress')) : t('provider.nothingInProgress')}
         />
         <StatTile
-          label="Available Jobs" icon="briefcase" tone="neutral"
+          label={t('provider.availableJobs')} icon="briefcase" tone="neutral"
           value={jobs.length}
-          sub="Open near you"
+          sub={t('provider.openNearYou')}
         />
       </div>
 
-      <PageTitle title="Available Jobs" sub="Open posts from customers near you." />
+      <PageTitle title={t('provider.availableJobs')} sub={t('provider.openPostsFromCustomersNearYou')} />
 
       {error && <ErrorNote>{error}</ErrorNote>}
 
@@ -189,7 +194,7 @@ export default function ProviderHomePage() {
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
         {DISTANCES.map((d) => (
           <button
-            key={d.label}
+            key={d.labelKey}
             type="button"
             onClick={() => setDistance(d.value)}
             className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
@@ -198,24 +203,25 @@ export default function ProviderHomePage() {
                 : 'bg-surface text-ink-70 ring-1 ring-inset ring-line hover:text-ink'
             }`}
           >
-            {d.label}
+            {t(d.labelKey)}
           </button>
         ))}
       </div>
       {noLocation && distance !== null && (
         <p className="-mt-2 text-xs text-ink-50">
-          Add your work location in your profile to filter jobs by distance.
+          {t('provider.addYourWorkLocationInYour')}
         </p>
       )}
 
       {loading ? <CardSkeleton /> : jobs.length === 0 ? (
-        <Card><Empty title="No open jobs right now"
-          sub="New posts near you will appear here. Check back soon." /></Card>
+        <Card><Empty title={t('provider.noOpenJobsRightNow')}
+          sub={t('provider.newPostsNearYouWillAppear')} /></Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {jobs.map((j) => (
             <div key={j.job_id} className="overflow-hidden rounded-xl border border-line bg-surface transition-all hover:-translate-y-0.5 hover:border-accent-role hover:shadow-md">
-              {j.image_url && <Thumb src={j.image_url} className="h-32 w-full" />}
+              <JobPhotos urls={j.image_urls ?? (j.image_url ? [j.image_url] : [])}
+                skill={{ name: j.skill_name, color: j.skill_color }} className="h-32 w-full" />
               <div className="p-4">
                 {j.skill_name && (
                   <span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold text-ink"
@@ -236,17 +242,17 @@ export default function ProviderHomePage() {
                 <div className="mt-3 flex items-center justify-between border-t border-line-soft pt-3">
                   <span className="flex min-w-0 items-center gap-2">
                     <Avatar src={j.customer_avatar} name={j.customer_name} size="sm" />
-                    <span className="truncate text-sm text-ink-70">{j.customer_name ?? 'Customer'}</span>
+                    <span className="truncate text-sm text-ink-70">{j.customer_name ?? t('provider.customer')}</span>
                   </span>
                   <span className="shrink-0 font-bold tabular-nums text-ink">{money(j.payment_amount)}</span>
                 </div>
 
                 <div className="mt-3 flex gap-2">
                   <Link href={`/jobs/post/${j.job_id}`} className="flex-1">
-                    <Button size="sm" fullWidth>View Job</Button>
+                    <Button size="sm" fullWidth>{t('provider.viewJob')}</Button>
                   </Link>
                   <Button size="sm" variant="outline" loading={skipping === j.job_id}
-                    onClick={() => skip(j.job_id)}>Skip Job</Button>
+                    onClick={() => skip(j.job_id)}>{t('provider.skipJob')}</Button>
                 </div>
               </div>
             </div>
@@ -257,7 +263,7 @@ export default function ProviderHomePage() {
       {hasMore && !loading && (
         <div className="flex justify-center">
           <Button variant="outline" loading={loadingMore} onClick={loadMore}>
-            Load more jobs
+            {t('provider.loadMoreJobs')}
           </Button>
         </div>
       )}

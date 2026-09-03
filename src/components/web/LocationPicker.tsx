@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useT } from '@/lib/i18n'
 
 export interface PickedLocation {
   address: string
@@ -40,7 +41,7 @@ interface NominatimPlace {
 export default function LocationPicker({
   value,
   onChange,
-  label = 'Address',
+  label,
   required,
   hint,
   error,
@@ -52,6 +53,7 @@ export default function LocationPicker({
   hint?: string
   error?: string
 }) {
+  const t = useT()
   const [query, setQuery] = useState(value?.address ?? '')
   const [results, setResults] = useState<NominatimPlace[]>([])
   const [open, setOpen] = useState(false)
@@ -151,7 +153,7 @@ export default function LocationPicker({
     <div ref={boxRef}>
       <div className="mb-1.5 flex items-center justify-between">
         <label className="text-sm font-semibold text-ink-80">
-          {label}
+          {label ?? t('ui.address')}
           {required && <span className="ml-0.5 text-danger">*</span>}
         </label>
         <button
@@ -160,7 +162,7 @@ export default function LocationPicker({
           disabled={locating}
           className="text-xs font-semibold text-accent-role hover:underline disabled:text-ink-50"
         >
-          {locating ? 'Locating…' : 'Use my location'}
+          {locating ? t('ui.locating') : t('ui.useMyLocation')}
         </button>
       </div>
 
@@ -174,7 +176,7 @@ export default function LocationPicker({
             if (value) onChange(null)
           }}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Start typing an address…"
+          placeholder={t('ui.startTypingAnAddress')}
           autoComplete="off"
           className={`w-full rounded-lg border bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-50 focus:border-accent-role focus:ring-1 focus:ring-accent-role ${
             error ? 'border-danger' : 'border-line'
@@ -212,7 +214,7 @@ export default function LocationPicker({
         <p className="mt-1 text-xs text-ink-50">{hint}</p>
       ) : (
         <p className="mt-1 text-xs text-ink-50">
-          Pick a suggestion so providers nearby can find this job.
+          {t('ui.pickASuggestionSoProvidersNearby')}
         </p>
       )}
     </div>

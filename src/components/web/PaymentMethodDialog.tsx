@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '@/lib/web/api'
 import { Button, Spinner, money } from './ui'
+import { useT } from '@/lib/i18n'
 
 export interface SavedCard {
   id: string
@@ -44,6 +45,7 @@ export default function PaymentMethodDialog({
   onClose: () => void
   onSelect: (cardId?: string) => void | Promise<void>
 }) {
+  const t = useT()
   const [cards, setCards] = useState<SavedCard[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -91,7 +93,7 @@ export default function PaymentMethodDialog({
             ),
           )}
           <div className="flex justify-between pt-1 text-base">
-            <dt className="font-semibold text-ink">Charged now</dt>
+            <dt className="font-semibold text-ink">{t('ui.chargedNow')}</dt>
             <dd className="font-bold tabular-nums text-accent-role">{money(breakdown.total)}</dd>
           </div>
           {!!breakdown.cash && (
@@ -108,7 +110,7 @@ export default function PaymentMethodDialog({
                 className="flex w-full items-center justify-between gap-3 rounded-xl border border-line px-4 py-3 text-left transition-colors hover:border-accent-role hover:bg-accent-soft disabled:opacity-50">
                 <span className="min-w-0">
                   <span className="block font-semibold capitalize text-ink">
-                    {c.cardLabel ?? 'Card'} ···· {c.cardNumber ?? '••••'}
+                    {c.cardLabel ?? t('ui.card')} ···· {c.cardNumber ?? '••••'}
                   </span>
                   {c.exp_month && c.exp_year && (
                     <span className="block text-xs text-ink-50">
@@ -125,9 +127,9 @@ export default function PaymentMethodDialog({
             ))}
 
             <Button variant="outline" fullWidth disabled={busy} onClick={() => void onSelect(undefined)}>
-              {cards.length > 0 ? 'Pay with a new card' : 'Continue to payment'}
+              {cards.length > 0 ? t('ui.payWithANewCard') : t('ui.continueToPayment')}
             </Button>
-            <Button variant="ghost" fullWidth disabled={busy} onClick={onClose}>Cancel</Button>
+            <Button variant="ghost" fullWidth disabled={busy} onClick={onClose}>{t('ui.cancel')}</Button>
           </div>
         )}
       </div>

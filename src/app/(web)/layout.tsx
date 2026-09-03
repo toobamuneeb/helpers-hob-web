@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { SessionProvider } from '@/lib/web/session'
+import LocaleGate from '@/lib/i18n/LocaleGate'
 import WebShell from '@/components/web/WebShell'
 
 export const metadata: Metadata = {
@@ -16,9 +17,13 @@ export const metadata: Metadata = {
 export default function WebLayout({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <div className="font-public flex min-h-screen flex-col bg-canvas text-ink">
-        <WebShell>{children}</WebShell>
-      </div>
+      {/* Inside the session so the signed-in profile's preferred_language wins
+          over whatever this browser had remembered. */}
+      <LocaleGate>
+        <div className="font-public flex min-h-screen flex-col bg-canvas text-ink">
+          <WebShell>{children}</WebShell>
+        </div>
+      </LocaleGate>
     </SessionProvider>
   )
 }

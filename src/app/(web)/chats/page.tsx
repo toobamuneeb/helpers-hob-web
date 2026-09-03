@@ -6,6 +6,7 @@ import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
 import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { Avatar, Card, Empty, ErrorNote, PageTitle, ListSkeleton, date } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 /** Shape the API returns — it flattens the other party into recipient_*. */
 interface ChatRow {
@@ -20,6 +21,7 @@ interface ChatRow {
 
 export default function ChatListPage() {
   const { profile } = useSession()
+  const t = useT()
   const [chats, setChats] = useState<ChatRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +35,7 @@ export default function ChatListPage() {
       `/chat/list${api.qs({ user_id: userId, limit: 50 })}`,
     )
     if (res.success) setChats(Array.isArray(res.data) ? res.data : [])
-    else setError(res.error ?? 'Could not load your chats')
+    else setError(res.error ?? t('chat.couldNotLoadYourChats'))
     setLoading(false)
   }, [userId])
 
@@ -74,13 +76,13 @@ export default function ChatListPage() {
 
   return (
     <div className="space-y-5">
-      <PageTitle title="Chats" />
+      <PageTitle title={t('chat.chats')} />
       {error && <ErrorNote>{error}</ErrorNote>}
 
       <Card bleed>
         {loading ? <ListSkeleton /> : chats.length === 0 ? (
-          <Empty title="No conversations yet"
-            sub="Message a provider from their profile to get started." />
+          <Empty title={t('chat.noConversationsYet')}
+            sub={t('chat.messageAProviderFromTheirProfile')} />
         ) : (
           <ul className="divide-y divide-line-soft">
             {chats.map((c) => (
@@ -91,7 +93,7 @@ export default function ChatListPage() {
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center justify-between gap-2">
                       <span className="truncate font-semibold text-ink">
-                        {c.recipient_name ?? 'Conversation'}
+                        {c.recipient_name ?? t('chat.conversation')}
                       </span>
                       {c.last_message_at && (
                         <span className="shrink-0 text-xs text-ink-50">{date(c.last_message_at)}</span>
@@ -99,7 +101,7 @@ export default function ChatListPage() {
                     </span>
                     <span className="mt-0.5 flex items-center gap-2">
                       <span className="min-w-0 flex-1 truncate text-sm text-ink-70">
-                        {c.last_message ?? 'No messages yet'}
+                        {c.last_message ?? t('chat.noMessagesYet')}
                       </span>
                       {!!c.unread_count && c.unread_count > 0 && (
                         <span className="shrink-0 rounded-full bg-accent-role px-2 py-0.5 text-xs font-bold text-accent-on">

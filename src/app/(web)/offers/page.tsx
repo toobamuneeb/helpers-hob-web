@@ -5,18 +5,19 @@ import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
 import BookingCard, { type OfferLike } from '@/components/web/BookingCard'
 import { Badge, Button, Card, Empty, ErrorNote, PageTitle, CardSkeleton } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 /**
  * The reply an offer has had, which is what this screen is about — distinct
  * from offer_status, which tracks the work. Wording from the mobile Offers
  * screen's JOB_STATUS_LABELS.
  */
-const REPLY_LABEL: Record<string, string> = {
-  pending: 'Awaiting Response',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-  canceled: 'Cancelled',
-  cancelled: 'Cancelled',
+const REPLY_LABEL_KEY: Record<string, string> = {
+  pending: 'offers.awaitingResponse',
+  accepted: 'offers.accepted',
+  rejected: 'offers.rejected',
+  canceled: 'offers.cancelled',
+  cancelled: 'offers.cancelled',
 }
 
 /**
@@ -28,6 +29,7 @@ const REPLY_LABEL: Record<string, string> = {
  */
 export default function OffersPage() {
   const { isProvider } = useSession()
+  const t = useT()
   const [offers, setOffers] = useState<OfferLike[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -38,7 +40,7 @@ export default function OffersPage() {
       isProvider ? '/offers/pending?limit=50' : '/offers?limit=100',
     )
     if (res.success) { setOffers(Array.isArray(res.data) ? res.data : []); setError(null) }
-    else setError(res.error ?? 'Could not load offers')
+    else setError(res.error ?? t('offers.couldNotLoadOffers'))
     setLoading(false)
   }, [isProvider])
 
@@ -47,10 +49,10 @@ export default function OffersPage() {
   // user has already left.
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => { if (!cancelled) void load() }, 0)
+    const timer = setTimeout(() => { if (!cancelled) void load() }, 0)
     return () => {
       cancelled = true
-      clearTimeout(t)
+      clearTimeout(timer)
     }
   }, [load])
 
@@ -58,7 +60,7 @@ export default function OffersPage() {
     if (confirmText && !window.confirm(confirmText)) return
     setBusyId(offerId)
     const res = await api.post(`/offers/${offerId}`, { action })
-    if (!res.success) setError(res.error ?? 'Could not update the offer')
+    if (!res.success) setError(res.error ?? t('offers.couldNotUpdateTheOffer'))
     else await load()
     setBusyId(null)
   }
@@ -70,13 +72,13 @@ export default function OffersPage() {
           href={`/jobs/${o.offer_id}?from=offers`}
           // get_pending_offers_for_provider returns offer_job_status, not
           // offer_status — every row here is an offer waiting on this provider.
-          badge={<Badge value={o.offer_job_status ?? 'pending'} label="Awaiting Your Reply" />}
+          badge={<Badge value={o.offer_job_status ?? 'pending'} label={t('offers.awaitingYourReply')} />}
           actions={
             <>
               <Button size="sm" loading={busyId === o.offer_id}
-                onClick={() => act(o.offer_id, 'accept')}>Accept</Button>
+                onClick={() => act(o.offer_id, 'accept')}>{t('offers.accept')}</Button>
               <Button size="sm" variant="outline" disabled={busyId === o.offer_id}
-                onClick={() => act(o.offer_id, 'reject', 'Decline this offer?')}>Decline</Button>
+                onClick={() => act(o.offer_id, 'reject', 'Decline this offer?')}>{t('offers.decline')}</Button>
             </>
           } />
       )
@@ -86,13 +88,13 @@ export default function OffersPage() {
     return (
       <BookingCard key={o.offer_id} offer={o} role="customer"
         href={`/jobs/${o.offer_id}?from=offers`}
-        badge={<Badge value={reply} label={REPLY_LABEL[reply] ?? reply} />}
+        badge={<Badge value={reply} label={REPLY_LABEL_KEY[reply] ? t(REPLY_LABEL_KEY[reply]) : reply} />}
         // Only an offer still waiting for a reply can be withdrawn; once it has
         // been accepted it is a booking, and once rejected there is nothing left
         // to cancel.
         actions={reply === 'pending' ? (
           <Button size="sm" variant="outline" loading={busyId === o.offer_id}
-            onClick={() => act(o.offer_id, 'cancel', 'Cancel this offer?')}>Cancel Offer</Button>
+            onClick={() => act(o.offer_id, 'cancel', 'Cancel this offer?')}>{t('offers.cancelOffer')}</Button>
         ) : undefined} />
     )
   }
@@ -100,17 +102,17 @@ export default function OffersPage() {
   return (
     <div className="space-y-5">
       <PageTitle
-        title={isProvider ? 'Pending offers' : 'My sent offers'}
+        title={isProvider ? t('offers.pendingOffers') : t('offers.mySentOffers')}
         sub={isProvider
-          ? 'Customers who want to book you.'
-          : 'Every offer you have sent, and how the provider replied.'}
+          ? t('offers.customersWhoWantToBookYou')
+          : t('offers.everyOfferYouHaveSent')}
       />
 
       {error && <ErrorNote>{error}</ErrorNote>}
 
       {loading ? <CardSkeleton /> : offers.length === 0 ? (
-        <Card><Empty title={isProvider ? 'Nothing pending' : 'No sent offers'}
-          sub={isProvider ? 'New offers will appear here.' : 'Offers you send will appear here.'} /></Card>
+        <Card><Empty title={isProvider ? t('offers.nothingPending') : t('offers.noSentOffers')}
+          sub={isProvider ? t('offers.newOffersWillAppearHere') : t('offers.offersYouSendWillAppearHere')} /></Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {offers.map(cardFor)}

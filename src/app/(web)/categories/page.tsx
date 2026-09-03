@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { Card, Empty, INPUT_CLASS, PageTitle, SkillIcon, Spinner } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface Skill { id: string; name: string; icon: string | null; color: string | null }
 
 export default function CategoriesPage() {
+  const t = useT()
   const [skills, setSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -28,13 +30,13 @@ export default function CategoriesPage() {
 
   return (
     <div className="space-y-5">
-      <PageTitle title="Categories" sub={`${skills.length} services available`} />
+      <PageTitle title={t('categories.categories')} sub={`${skills.length} services available`} />
       <input value={search} onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search categories…" className={INPUT_CLASS} />
+        placeholder={t('categories.searchCategories')} className={INPUT_CLASS} />
 
       <Card>
         {loading ? <Spinner /> : shown.length === 0 ? (
-          <Empty title="Nothing matches that search." />
+          <Empty title={t('categories.nothingMatchesThatSearch')} />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {shown.map((s) => (

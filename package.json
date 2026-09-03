@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_OPTIONS=--max-http-header-size=65536 next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_OPTIONS=--max-http-header-size=65536 next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -14,10 +14,12 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
+    "i18next": "^26.4.1",
     "next": "16.2.4",
     "rate-limiter-flexible": "^11.0.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-i18next": "^17.0.13",
     "stripe": "^22.3.2",
     "winston": "^3.19.0",
     "zod": "^4.4.1"

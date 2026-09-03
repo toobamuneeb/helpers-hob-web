@@ -5,15 +5,16 @@ import { useSearchParams } from 'next/navigation'
 import { api } from '@/lib/web/api'
 import BookingCard, { type OfferLike } from '@/components/web/BookingCard'
 import { Card, Empty, ErrorNote, PageTitle, CardSkeleton } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 // The mobile Bookings screen's tabs, in its order.
 const TABS = [
-  { id: 'scheduled', label: 'Scheduled' },
-  { id: 'pending', label: 'Pending' },
-  { id: 'active', label: 'Active' },
-  { id: 'completed', label: 'Completed' },
-  { id: 'cancelled', label: 'Cancelled' },
-]
+  { id: 'scheduled', labelKey: 'bookings.scheduled' },
+  { id: 'pending', labelKey: 'bookings.pending' },
+  { id: 'active', labelKey: 'bookings.active' },
+  { id: 'completed', labelKey: 'bookings.completed' },
+  { id: 'cancelled', labelKey: 'bookings.cancelled' },
+] as const
 
 /**
  * offer_status → tab, copied from the mobile screen's STATUS_TAB_MAP.
@@ -34,11 +35,12 @@ const TAB_OF: Record<string, string> = {
 }
 
 function Bookings() {
+  const t = useT()
   const search = useSearchParams()
   // Coming back from a booking's detail, land on the tab you left from.
   const wanted = search.get('tab')
   const [tab, setTab] = useState(
-    TABS.some((t) => t.id === wanted) ? (wanted as string) : 'scheduled',
+    TABS.some((item) => item.id === wanted) ? (wanted as string) : 'scheduled',
   )
 
   const [offers, setOffers] = useState<OfferLike[]>([])
@@ -50,7 +52,7 @@ function Bookings() {
   const load = useCallback(async () => {
     const res = await api.get<OfferLike[]>('/offers?limit=100')
     if (res.success) { setOffers(Array.isArray(res.data) ? res.data : []); setError(null) }
-    else setError(res.error ?? 'Could not load your bookings')
+    else setError(res.error ?? t('bookings.couldNotLoadYourBookings'))
     setLoading(false)
   }, [])
 
@@ -59,10 +61,10 @@ function Bookings() {
   // user has already left.
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => { if (!cancelled) void load() }, 0)
+    const timer = setTimeout(() => { if (!cancelled) void load() }, 0)
     return () => {
       cancelled = true
-      clearTimeout(t)
+      clearTimeout(timer)
     }
   }, [load])
 
@@ -78,14 +80,14 @@ function Bookings() {
 
   return (
     <div className="space-y-5">
-      <PageTitle title="Bookings" sub="Jobs you have booked with providers." />
+      <PageTitle title={t('bookings.bookings')} sub={t('bookings.jobsYouHaveBookedWithProviders')} />
 
       <div className="flex gap-1 overflow-x-auto pb-1">
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+        {TABS.map((item) => (
+          <button key={item.id} onClick={() => setTab(item.id)}
             className={`whitespace-nowrap rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-              tab === t.id ? 'bg-accent-role text-accent-on' : 'text-ink-70 ring-1 ring-inset ring-line hover:bg-accent-soft'}`}>
-            {t.label}
+              tab === item.id ? 'bg-accent-role text-accent-on' : 'text-ink-70 ring-1 ring-inset ring-line hover:bg-accent-soft'}`}>
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
@@ -93,8 +95,8 @@ function Bookings() {
       {error && <ErrorNote>{error}</ErrorNote>}
 
       {loading ? <CardSkeleton /> : shown.length === 0 ? (
-        <Card><Empty title="Nothing here"
-          sub={`You have no ${TABS.find((t) => t.id === tab)?.label.toLowerCase()} bookings.`} /></Card>
+        <Card><Empty title={t('bookings.nothingHere')}
+          sub={t(`bookings.empty.${tab}`)} /></Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((o) => (

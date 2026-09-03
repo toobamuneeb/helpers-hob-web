@@ -9,6 +9,7 @@ import { uploadImage } from '@/lib/web/storage'
 import { useSession } from '@/lib/web/session'
 import ImagePicker from '@/components/web/ImagePicker'
 import { Button, ErrorNote, Field, INPUT_CLASS } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface FormState {
   name: string
@@ -25,6 +26,7 @@ interface FormState {
  * lets the customer straight into the app (providers go to 'pending' instead).
  */
 export default function CreateProfilePage() {
+  const t = useT()
   const router = useRouter()
   const { profile, refresh, signOut } = useSession()
 
@@ -64,7 +66,7 @@ export default function CreateProfilePage() {
         `${profile.user_id}_profile_${Date.now()}`,
       )
       if (uploaded.error || !uploaded.url) {
-        setError(uploaded.error ?? 'Image upload failed')
+        setError(uploaded.error ?? t('profile.imageUploadFailed'))
         setBusy(false)
         return
       }
@@ -91,7 +93,7 @@ export default function CreateProfilePage() {
       await refresh()
       router.replace('/home')
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('profile.somethingWentWrongPleaseTryAgain'))
       setBusy(false)
     }
   }
@@ -111,18 +113,18 @@ export default function CreateProfilePage() {
             <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8"
               strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Back to sign in
+          {t('profile.backToSignIn')}
         </button>
 
         <div className="mb-6 flex flex-col items-center">
-          <Image src="/logo.png" alt="HelpersHob" width={72} height={66} priority className="h-auto" />
+          <Image src="/logo.png" alt={t('profile.helpershob')} width={72} height={66} priority className="h-auto" />
         </div>
 
         <h1 className="text-center text-2xl font-bold tracking-tight text-ink">
-          Create your profile
+          {t('profile.createYourProfile')}
         </h1>
         <p className="mt-1 text-center text-sm text-ink-70">
-          This is what providers see when you book them.
+          {t('profile.thisIsWhatProvidersSeeWhen')}
         </p>
 
         <form onSubmit={onSubmit} className="mt-7 space-y-4 rounded-xl border border-line bg-surface p-6 shadow-sm">
@@ -130,47 +132,47 @@ export default function CreateProfilePage() {
 
           <div className="flex justify-center">
             <ImagePicker
-              label="Profile picture"
+              label={t('profile.profilePicture')}
               value={photo}
               onChange={setPhoto}
               error={photoError}
             />
           </div>
 
-          <Field label="Name" required>
-            <input required value={form.name} onChange={set('name')} placeholder="Benson Ronald" className={INPUT_CLASS} />
+          <Field label={t('profile.name')} required>
+            <input required value={form.name} onChange={set('name')} placeholder={t('profile.bensonRonald')} className={INPUT_CLASS} />
           </Field>
 
-          <Field label="Email" required>
+          <Field label={t('profile.email')} required>
             <input
               type="email"
               required
               value={form.email}
               onChange={set('email')}
-              placeholder="abc@yahoo.com"
+              placeholder={t('profile.abcYahooCom')}
               className={INPUT_CLASS}
               readOnly
             />
           </Field>
 
-          <Field label="Phone" required>
+          <Field label={t('profile.phone')} required>
             <input required value={form.phone} onChange={set('phone')} placeholder="123-456-7890" className={INPUT_CLASS} />
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Country" required>
-              <input required value={form.country} onChange={set('country')} placeholder="Netherlands" className={INPUT_CLASS} />
+            <Field label={t('profile.country')} required>
+              <input required value={form.country} onChange={set('country')} placeholder={t('profile.netherlands')} className={INPUT_CLASS} />
             </Field>
-            <Field label="State" required>
-              <input required value={form.state} onChange={set('state')} placeholder="North Holland" className={INPUT_CLASS} />
+            <Field label={t('profile.state')} required>
+              <input required value={form.state} onChange={set('state')} placeholder={t('profile.northHolland')} className={INPUT_CLASS} />
             </Field>
           </div>
 
-          <Field label="Postal code" required>
+          <Field label={t('profile.postalCode')} required>
             <input required value={form.zip} onChange={set('zip')} placeholder="98765" className={INPUT_CLASS} />
           </Field>
 
-          <Button type="submit" size="lg" fullWidth loading={busy}>Continue</Button>
+          <Button type="submit" size="lg" fullWidth loading={busy}>{t('profile.continue')}</Button>
         </form>
       </div>
     </div>

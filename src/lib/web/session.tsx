@@ -29,6 +29,8 @@ export interface Profile {
   location_lng: number | null
   work_radius_km: number | null
   stripe_customer_id: string | null
+  /** 'en' | 'nl' — the UI language chosen at sign-up. See lib/i18n. */
+  preferred_language: string | null
   created_at: string
 }
 

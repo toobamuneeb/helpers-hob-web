@@ -12,6 +12,7 @@ import AvailabilityPicker, { normaliseSlots, validateSlots, type Slot } from '@/
 import ImagePicker from '@/components/web/ImagePicker'
 import LocationPicker, { type PickedLocation } from '@/components/web/LocationPicker'
 import { Button, Card, ErrorNote, Field, INPUT_CLASS, Spinner } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface Skill {
   id: string
@@ -27,6 +28,7 @@ interface Skill {
  * ACCOUNT_PENDING_APPROVAL until approved.
  */
 export default function ProviderCreateProfilePage() {
+  const t = useT()
   const router = useRouter()
   const { profile, refresh, signOut } = useSession()
 
@@ -79,9 +81,9 @@ export default function ProviderCreateProfilePage() {
 
     // Same order of checks as the mobile screen, so the first thing a provider
     // is told to fix is the same on both clients.
-    if (selectedSkills.length === 0) return setError('At least one skill is required')
-    if (!photo) return setError('Please upload a profile picture')
-    if (!location) return setError('Please pick your work location from the suggestions')
+    if (selectedSkills.length === 0) return setError(t('provider.atLeastOneSkillIsRequired'))
+    if (!photo) return setError(t('provider.pleaseUploadAProfilePicture'))
+    if (!location) return setError(t('provider.pleasePickYourWorkLocationFrom'))
 
     const slotProblem = validateSlots(slots)
     if (slotProblem) return setError(slotProblem)
@@ -95,7 +97,7 @@ export default function ProviderCreateProfilePage() {
         `${profile.user_id}_profile_${Date.now()}`,
       )
       if (uploadedPhoto.error || !uploadedPhoto.url) {
-        setError(uploadedPhoto.error ?? 'Image upload failed')
+        setError(uploadedPhoto.error ?? t('provider.imageUploadFailed'))
         setBusy(false)
         return
       }
@@ -113,7 +115,7 @@ export default function ProviderCreateProfilePage() {
         slots: normaliseSlots(slots),
       })
       if (!availability.success) {
-        setError(availability.error ?? 'Could not save your availability')
+        setError(availability.error ?? t('provider.couldNotSaveYourAvailability'))
         setBusy(false)
         return
       }
@@ -162,7 +164,7 @@ export default function ProviderCreateProfilePage() {
       await refresh()
       router.replace('/pending-approval')
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('provider.somethingWentWrongPleaseTryAgain'))
       setBusy(false)
     }
   }
@@ -182,59 +184,59 @@ export default function ProviderCreateProfilePage() {
             <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.8"
               strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          Back to sign in
+          {t('provider.backToSignIn')}
         </button>
 
         <div className="mb-6 flex flex-col items-center">
-          <Image src="/logo.png" alt="HelpersHob" width={72} height={66} priority className="h-auto" />
+          <Image src="/logo.png" alt={t('provider.helpershob')} width={72} height={66} priority className="h-auto" />
         </div>
 
         <h1 className="text-center text-2xl font-bold tracking-tight text-ink">
-          Set up your provider profile
+          {t('provider.setUpYourProviderProfile')}
         </h1>
         <p className="mt-1 text-center text-sm text-ink-70">
-          Our team reviews every provider before their first job.
+          {t('provider.ourTeamReviewsEveryProviderBefore')}
         </p>
 
         <form onSubmit={onSubmit} className="mt-7 space-y-6">
           {error && <ErrorNote>{error}</ErrorNote>}
 
-          <Card title="About you">
+          <Card title={t('provider.aboutYou')}>
             <div className="space-y-4">
               <div className="flex justify-center">
-                <ImagePicker label="Profile picture" value={photo} onChange={setPhoto} />
+                <ImagePicker label={t('provider.profilePicture')} value={photo} onChange={setPhoto} />
               </div>
 
-              <Field label="Name" required>
-                <input required value={form.name} onChange={set('name')} placeholder="Benson Ronald" className={INPUT_CLASS} />
+              <Field label={t('provider.name')} required>
+                <input required value={form.name} onChange={set('name')} placeholder={t('provider.bensonRonald')} className={INPUT_CLASS} />
               </Field>
 
-              <Field label="Email" required>
+              <Field label={t('provider.email')} required>
                 <input type="email" required value={form.email} onChange={set('email')} className={INPUT_CLASS} readOnly />
               </Field>
 
-              <Field label="Phone" required>
+              <Field label={t('provider.phone')} required>
                 <input required value={form.phone} onChange={set('phone')} placeholder="123-456-7890" className={INPUT_CLASS} />
               </Field>
 
-              <Field label="Introduction" hint="Tell customers what you do and how long you have been doing it.">
+              <Field label={t('provider.introduction')} hint={t('provider.tellCustomersWhatYouDoAnd')}>
                 <textarea
                   value={form.introduction}
                   onChange={set('introduction')}
                   rows={4}
                   className={INPUT_CLASS}
-                  placeholder="I have 8 years of experience in carpentry…"
+                  placeholder={t('provider.iHaveYearsOfExperienceIn')}
                 />
               </Field>
             </div>
           </Card>
 
-          <Card title="Your skills">
+          <Card title={t('provider.yourSkills')}>
             {loadingSkills ? (
-              <Spinner label="Loading skills…" />
+              <Spinner label={t('provider.loadingSkills')} />
             ) : (
               <>
-                <p className="mb-3 text-sm text-ink-70">Pick everything you can take on.</p>
+                <p className="mb-3 text-sm text-ink-70">{t('provider.pickEverythingYouCanTakeOn')}</p>
                 <div className="flex flex-wrap gap-2">
                   {skills.map((s) => {
                     const on = selectedSkills.includes(s.id)
@@ -258,23 +260,23 @@ export default function ProviderCreateProfilePage() {
             )}
           </Card>
 
-          <Card title="Where you work" allowOverflow>
+          <Card title={t('provider.whereYouWork')} allowOverflow>
             <div className="space-y-4">
               <LocationPicker value={location} onChange={setLocation}
-                label="Work location" required
-                hint="Jobs are matched to providers near the customer." />
+                label={t('provider.workLocation')} required
+                hint={t('provider.jobsAreMatchedToProvidersNear')} />
             </div>
           </Card>
 
-          <Card title="Your availability">
+          <Card title={t('provider.yourAvailability')}>
             <p className="mb-4 text-sm text-ink-70">
-              Customers can only book you inside these hours.
+              {t('provider.customersCanOnlyBookYouInside')}
             </p>
             <AvailabilityPicker slots={slots} onChange={setSlots} />
           </Card>
 
           <Button type="submit" size="lg" fullWidth loading={busy}>
-            Submit for review
+            {t('provider.submitForReview')}
           </Button>
         </form>
       </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/lib/web/api'
 import { Badge, Card, Empty, ErrorNote, PageTitle, Spinner, dateTime, money } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface Payment {
   payment_id: string
@@ -57,6 +58,7 @@ interface Earnings {
 
 /** Provider earnings + payment history, mirroring the mobile PaymentHistory. */
 export default function ProviderEarningsPage() {
+  const t = useT()
   const [summary, setSummary] = useState<Earnings | null>(null)
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
@@ -144,15 +146,15 @@ export default function ProviderEarningsPage() {
 
   return (
     <div className="space-y-5">
-      <PageTitle title="Payment History" sub="Split payment via Stripe — your share after fees." />
+      <PageTitle title={t('earnings.paymentHistory')} sub={t('earnings.splitPaymentViaStripeYourShare')} />
       {error && <ErrorNote>{error}</ErrorNote>}
 
       <div className="grid gap-4 sm:grid-cols-3">
         {[
           // /payments/earnings only totals what Stripe routed, so cash work is
           // missing from it — the figure has to include what is listed below.
-          { label: 'Total Earned', value: (summary?.total_earned ?? 0) + cashEarned },
-          { label: 'Pending', value: summary?.pending_amount },
+          { label: t('earnings.totalEarned'), value: (summary?.total_earned ?? 0) + cashEarned },
+          { label: t('earnings.pending'), value: summary?.pending_amount },
                   ].map((s) => (
           <div key={s.label} className="rounded-xl border border-line bg-surface px-5 py-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-50">{s.label}</p>
@@ -163,9 +165,9 @@ export default function ProviderEarningsPage() {
         ))}
       </div>
 
-      <Card title="Completed Jobs" bleed>
+      <Card title={t('earnings.completedJobs')} bleed>
         {payments.length === 0 ? (
-          <Empty title="No Payment History" sub="Completed jobs paid through the platform appear here." />
+          <Empty title={t('earnings.noPaymentHistory')} sub={t('earnings.completedJobsPaidThroughThePlatform')} />
         ) : (
           <ul className="divide-y divide-line-soft">
             {payments.map((p) => (
@@ -183,14 +185,14 @@ export default function ProviderEarningsPage() {
                 >
                 <span className="min-w-0 flex-1 basis-full sm:basis-auto">
                   <span className="block truncate font-semibold text-ink">
-                    {p.job_title ?? 'Job payment'}
+                    {p.job_title ?? t('provider.jobPayment')}
                   </span>
                   <span className="block truncate text-xs text-ink-50">
                     {p.customer_name ?? ''} · {dateTime(p.paid_at ?? p.created_at)}
                   </span>
                   {p.is_recurring && (
                     <span className="mt-1 inline-block rounded bg-[#e6f1f8] px-1.5 py-px text-[0.65rem] font-semibold text-secondary">
-                      Recurring Job
+                      {t('earnings.recurringJob')}
                     </span>
                   )}
                   {/* Two different things share this list: work that paid the
@@ -200,22 +202,22 @@ export default function ProviderEarningsPage() {
                   <span className="mt-1 flex flex-wrap items-center gap-1.5">
                     {p.kind === 'paid' ? (
                       <span className="rounded bg-surface-muted px-1.5 py-px text-[0.65rem] font-semibold text-ink-70">
-                        Subscription
+                        {t('earnings.subscription')}
                       </span>
                     ) : isCash(p) ? (
                       <span className="rounded bg-warm px-1.5 py-px text-[0.65rem] font-semibold text-[#9a5b25]">
-                        Cash
+                        {t('earnings.cash')}
                       </span>
                     ) : (
                       <span className="rounded bg-accent-soft px-1.5 py-px text-[0.65rem] font-semibold text-accent-role">
-                        Through the platform
+                        {t('earnings.throughThePlatform')}
                       </span>
                     )}
                     <span className="text-xs text-ink-50">
                       {p.kind === 'paid'
-                        ? 'Charged to you by HelpersHob'
+                        ? t('provider.chargedToYouByHelpershob')
                         : isCash(p)
-                          ? 'Collected directly from the customer'
+                          ? t('provider.collectedDirectlyFromTheCustomer')
                           : `Paid out after a ${money(p.platform_fee ?? 0, p.currency ?? 'EUR')} fee`}
                     </span>
                   </span>

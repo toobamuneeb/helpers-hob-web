@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updatePassword } from '@/lib/web/auth'
 import { BackLink, Button, Card, ErrorNote, Field, PageTitle, PasswordInput } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 export default function ChangePasswordPage() {
+  const t = useT()
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -16,12 +18,12 @@ export default function ChangePasswordPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (password.length < 6) return setError('Password must be at least 6 characters')
-    if (password !== confirm) return setError('Passwords do not match')
+    if (password.length < 6) return setError(t('profile.passwordMustBeAtLeastCharacters'))
+    if (password !== confirm) return setError(t('profile.passwordsDoNotMatch'))
 
     setBusy(true)
     const res = await updatePassword(password)
-    if (!res.success) { setError(res.error ?? 'Could not update your password'); setBusy(false); return }
+    if (!res.success) { setError(res.error ?? t('profile.couldNotUpdateYourPassword')); setBusy(false); return }
     setDone(true)
     setBusy(false)
     setTimeout(() => router.push('/profile'), 1200)
@@ -29,26 +31,26 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="space-y-5">
-      <BackLink href="/profile">Back to profile</BackLink>
-      <PageTitle title="Change password" />
+      <BackLink href="/profile">{t('profile.backToProfile')}</BackLink>
+      <PageTitle title={t('profile.changePassword')} />
 
       <Card>
         <form onSubmit={onSubmit} className="space-y-4">
           {error && <ErrorNote>{error}</ErrorNote>}
           {done && (
             <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm font-medium text-ink">
-              Password updated.
+              {t('profile.passwordUpdated')}
             </p>
           )}
-          <Field label="New password" required hint="At least 6 characters">
+          <Field label={t('profile.newPassword')} required hint={t('profile.atLeastCharacters')}>
             <PasswordInput required autoComplete="new-password" minLength={6}
               value={password} onChange={setPassword} />
           </Field>
-          <Field label="Confirm password" required>
+          <Field label={t('profile.confirmPassword')} required>
             <PasswordInput required autoComplete="new-password"
               value={confirm} onChange={setConfirm} />
           </Field>
-          <Button type="submit" fullWidth loading={busy}>Update password</Button>
+          <Button type="submit" fullWidth loading={busy}>{t('profile.updatePassword')}</Button>
         </form>
       </Card>
     </div>

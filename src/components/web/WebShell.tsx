@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { routeForProfile, useSession } from '@/lib/web/session'
 import { Avatar, Spinner } from './ui'
+import { useT } from '@/lib/i18n'
 
 // Signed-out landing and auth screens. A signed-in user has no business on
 // these, so the gate below bounces them home.
@@ -37,21 +38,21 @@ const ICONS: Record<string, string> = {
 // Labels are the mobile app's, so the two products name the same thing the
 // same way. Bottom-tab items are marked so the mobile bar stays at five.
 const CUSTOMER_NAV = [
-  { href: '/home', label: 'Home', icon: 'home', tab: true },
-  { href: '/bookings', label: 'Booking/Tasks', icon: 'bookings', tab: true, short: 'Bookings' },
-  { href: '/offers', label: 'My Sent Offers', icon: 'offers', short: 'Offers' },
-  { href: '/my-jobs', label: 'My Jobs', icon: 'jobs', tab: true, short: 'My Jobs' },
-  { href: '/chats', label: 'Messages', icon: 'chats', tab: true, short: 'Chats' },
-  { href: '/profile', label: 'Profile', icon: 'profile', tab: true },
+  { href: '/home', labelKey: 'ui.home', icon: 'home', tab: true },
+  { href: '/bookings', labelKey: 'ui.bookingTasks', icon: 'bookings', tab: true, shortKey: 'ui.bookingsShort' },
+  { href: '/offers', labelKey: 'ui.mySentOffers', icon: 'offers', shortKey: 'ui.offersShort' },
+  { href: '/my-jobs', labelKey: 'ui.myJobs', icon: 'jobs', tab: true, shortKey: 'ui.myJobsShort' },
+  { href: '/chats', labelKey: 'ui.messages', icon: 'chats', tab: true, shortKey: 'ui.chatsShort' },
+  { href: '/profile', labelKey: 'ui.profile', icon: 'profile', tab: true },
 ]
 
 const PROVIDER_NAV = [
-  { href: '/provider/home', label: 'Home', icon: 'home', tab: true },
-  { href: '/provider/jobs', label: 'Jobs', icon: 'jobs', tab: true },
-  { href: '/offers', label: 'Pending Offers', icon: 'offers', short: 'Offers' },
-  { href: '/provider/calendar', label: 'Calendar', icon: 'calendar', tab: true },
-  { href: '/chats', label: 'Messages', icon: 'chats', tab: true, short: 'Chats' },
-  { href: '/profile', label: 'Profile', icon: 'profile', tab: true },
+  { href: '/provider/home', labelKey: 'ui.home', icon: 'home', tab: true },
+  { href: '/provider/jobs', labelKey: 'ui.jobs', icon: 'jobs', tab: true },
+  { href: '/offers', labelKey: 'ui.pendingOffers', icon: 'offers', shortKey: 'ui.offersShort' },
+  { href: '/provider/calendar', labelKey: 'ui.calendar', icon: 'calendar', tab: true },
+  { href: '/chats', labelKey: 'ui.messages', icon: 'chats', tab: true, shortKey: 'ui.chatsShort' },
+  { href: '/profile', labelKey: 'ui.profile', icon: 'profile', tab: true },
 ]
 
 function NavIcon({ d, className = 'h-[1.15rem] w-[1.15rem]' }: { d: string; className?: string }) {
@@ -64,6 +65,7 @@ function NavIcon({ d, className = 'h-[1.15rem] w-[1.15rem]' }: { d: string; clas
 
 export default function WebShell({ children }: { children: React.ReactNode }) {
   const { profile, loading, signOut } = useSession()
+  const t = useT()
   const pathname = usePathname()
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -135,7 +137,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
             <span aria-hidden className="absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-accent-role" />
           )}
           <NavIcon d={ICONS[item.icon]} />
-          {item.label}
+          {t(item.labelKey)}
         </Link>
       ))}
     </nav>
@@ -154,7 +156,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
             {profile.name ?? profile.email}
           </span>
           <span className="block text-xs text-ink-50">
-            {profile.role === 'customer' ? 'Customer' : 'Service provider'}
+            {profile.role === 'customer' ? t('ui.customer') : t('ui.serviceProvider')}
           </span>
         </span>
       </Link>
@@ -162,15 +164,15 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
         onClick={signOut}
         className="mt-1 w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-ink-50 transition-colors hover:bg-surface-muted hover:text-ink"
       >
-        Sign out
+        {t('ui.signOut')}
       </button>
     </div>
   )
 
   const brand = (
     <Link href={homeHref} className="flex items-center gap-2.5 border-b border-line-soft px-5 py-4">
-      <Image src="/logo.png" alt="HelpersHob" width={34} height={31} priority className="h-auto" />
-      <span className="text-[0.95rem] font-bold tracking-tight text-ink">HelpersHob</span>
+      <Image src="/logo.png" alt={t('ui.helpershob')} width={34} height={31} priority className="h-auto" />
+      <span className="text-[0.95rem] font-bold tracking-tight text-ink">{t('ui.helpershob')}</span>
     </Link>
   )
 
@@ -190,7 +192,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
 
       {menuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button aria-label="Close menu" onClick={() => setMenuOpen(false)}
+          <button aria-label={t('ui.closeMenu')} onClick={() => setMenuOpen(false)}
             className="absolute inset-0 bg-ink/40" />
           <div className="absolute inset-y-0 left-0 flex w-[16.5rem] max-w-[80vw] flex-col bg-surface shadow-xl">
             {brand}{navList}{identity}
@@ -200,7 +202,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col bg-canvas">
         <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-line bg-surface/85 px-4 py-2.5 backdrop-blur-md print:hidden lg:hidden">
-          <button onClick={() => setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen}
+          <button onClick={() => setMenuOpen(true)} aria-label={t('ui.openMenu')} aria-expanded={menuOpen}
             className="rounded-lg p-2 text-ink-70 transition-colors hover:bg-surface-muted">
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
               <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -208,7 +210,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
           </button>
           <Image src="/logo.png" alt="" width={28} height={26} className="h-auto" />
           <span className="text-sm font-bold tracking-tight text-ink">
-            {nav.find((i) => isActive(i.href))?.label ?? 'HelpersHob'}
+            {(() => { const k = nav.find((i) => isActive(i.href))?.labelKey; return k ? t(k) : t('ui.helpershob') })()}
           </span>
           <Link href="/profile" className="ml-auto">
             <Avatar src={profile.profile_image_url} name={profile.name ?? profile.email} size="sm" />
@@ -231,7 +233,7 @@ export default function WebShell({ children }: { children: React.ReactNode }) {
                   <span aria-hidden className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-accent-role" />
                 )}
                 <NavIcon d={ICONS[item.icon]} className="h-5 w-5" />
-                {item.short ?? item.label}
+                {t(item.shortKey ?? item.labelKey)}
               </Link>
             ))}
           </div>

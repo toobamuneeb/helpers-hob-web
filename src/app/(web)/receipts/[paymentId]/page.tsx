@@ -7,6 +7,7 @@ import { useSession } from '@/lib/web/session'
 import {
   BackLink, Badge, Button, Card, ErrorNote, Spinner, date, dateTime, money,
 } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 interface Receipt {
   receipt_id?: string | null
@@ -46,18 +47,19 @@ interface Receipt {
  * from a booking, and each of those is the right place to return to.
  */
 function backTo(from: string | null, isProvider: boolean, offerId?: string | null) {
-  if (from === 'earnings') return { href: '/provider/earnings', label: 'Back to Payment History' }
-  if (from === 'jobs') return { href: '/provider/jobs', label: 'Back to Jobs' }
-  if (from === 'bookings') return { href: '/bookings', label: 'Back to Booking/Tasks' }
-  if (from === 'payments') return { href: '/payments', label: 'Back to Payment History' }
-  if (from === 'job' && offerId) return { href: `/jobs/${offerId}`, label: 'Back to the job' }
+  if (from === 'earnings') return { href: '/provider/earnings', labelKey: 'payments.backToPaymentHistory' }
+  if (from === 'jobs') return { href: '/provider/jobs', labelKey: 'payments.backToJobs' }
+  if (from === 'bookings') return { href: '/bookings', labelKey: 'payments.backToBookingTasks' }
+  if (from === 'payments') return { href: '/payments', labelKey: 'payments.backToPaymentHistory' }
+  if (from === 'job' && offerId) return { href: `/jobs/${offerId}`, labelKey: 'payments.backToTheJob' }
   return isProvider
-    ? { href: '/provider/earnings', label: 'Back to Payment History' }
-    : { href: '/bookings', label: 'Back to Booking/Tasks' }
+    ? { href: '/provider/earnings', labelKey: 'payments.backToPaymentHistory' }
+    : { href: '/bookings', labelKey: 'payments.backToBookingTasks' }
 }
 
 export default function ReceiptPage({ params }: { params: Promise<{ paymentId: string }> }) {
   const { paymentId } = use(params)
+  const t = useT()
   const from = useSearchParams().get('from')
   const { isProvider } = useSession()
 
@@ -67,20 +69,20 @@ export default function ReceiptPage({ params }: { params: Promise<{ paymentId: s
 
   useEffect(() => {
     let cancelled = false
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       void (async () => {
         const res = await api.get<Receipt>(`/payments/receipt/${paymentId}`)
         if (cancelled) return
         if (res.success && res.data) setReceipt(res.data)
-        else setError(res.error ?? 'Could not load this receipt')
+        else setError(res.error ?? t('payments.couldNotLoadThisReceipt'))
         setLoading(false)
       })()
     }, 0)
-    return () => { cancelled = true; clearTimeout(t) }
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [paymentId])
 
   if (loading) return <Spinner />
-  if (!receipt) return <ErrorNote>{error ?? 'Receipt not found'}</ErrorNote>
+  if (!receipt) return <ErrorNote>{error ?? t('payments.receiptNotFound')}</ErrorNote>
 
   const back = backTo(from, isProvider)
   const a = receipt.amounts ?? {}
@@ -107,12 +109,12 @@ export default function ReceiptPage({ params }: { params: Promise<{ paymentId: s
         ['Paid in cash', a.cash_amount],
       ]
 
-  const title = isToken ? 'Subscription Receipt' : 'Payment Receipt'
+  const title = isToken ? t('payments.subscriptionReceipt') : t('payments.paymentReceipt')
 
   // Money out for a token, money in for a completed job.
   const totalLabel = isToken
-    ? 'You paid'
-    : isProvider ? 'You received' : 'Total paid'
+    ? t('payments.youPaid')
+    : isProvider ? t('payments.youReceived') : t('payments.totalPaid')
   const totalValue = isToken
     ? a.total_paid
     : isProvider ? a.provider_receives : a.total_paid
@@ -120,7 +122,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ paymentId: s
   return (
     <div className="space-y-5">
       <div className="print:hidden">
-        <BackLink href={back.href}>{back.label}</BackLink>
+        <BackLink href={back.href}>{t(back.labelKey)}</BackLink>
       </div>
 
       <Card bleed>
@@ -134,8 +136,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ paymentId: s
           <p className="mt-0.5 text-xs text-ink-70">{totalLabel}</p>
           {isToken && (
             <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-ink-70">
-              This is your monthly subscription for recurring work — not the payment for
-              this job.
+              {t('payments.thisIsYourMonthlySubscriptionFor')}
             </p>
           )}
 
@@ -143,12 +144,12 @@ export default function ReceiptPage({ params }: { params: Promise<{ paymentId: s
             {receipt.status && <Badge value={receipt.status} />}
             {receipt.is_recurring && (
               <span className="rounded-full bg-[#e6f1f8] px-2.5 py-0.5 text-xs font-semibold text-secondary">
-                Recurring Job
+                {t('payments.recurringJob')}
               </span>
             )}
             {receipt.is_cash_payment && (
               <span className="rounded-full bg-warm px-2.5 py-0.5 text-xs font-semibold text-[#9a5b25]">
-                Cash
+                {t('payments.cash')}
               </span>
             )}
           </div>
@@ -160,7 +161,7 @@ export default function ReceiptPage({ params }: { params: Promise<{ paymentId: s
               ['Job', receipt.job_title],
               ['Service date', receipt.service_date ? date(receipt.service_date) : null],
               ['Paid on', receipt.payment_date ? dateTime(receipt.payment_date) : null],
-              ['Method', receipt.payment_method ?? (receipt.is_cash_payment ? 'Cash' : 'Card')],
+              ['Method', receipt.payment_method ?? (receipt.is_cash_payment ? 'Cash' : t('payments.card'))],
               ['Customer', receipt.customer?.name],
               ['Provider', receipt.provider?.name],
               ['Receipt ID', receipt.receipt_id ?? receipt.payment_id],

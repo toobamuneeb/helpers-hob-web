@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { resendOtp, verifyOtp } from '@/lib/web/auth'
 import { useSession } from '@/lib/web/session'
 import { Button, ErrorNote } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 // Supabase is configured for 8-digit codes here — the mobile SignupVerification
 // screens render numberOfDigits={8} against the same project.
@@ -23,6 +24,7 @@ function OtpBoxes({
   onChange: (v: string) => void
   disabled?: boolean
 }) {
+  const t = useT()
   const ref = useRef<HTMLInputElement>(null)
 
   return (
@@ -36,7 +38,7 @@ function OtpBoxes({
         maxLength={LENGTH}
         disabled={disabled}
         className="absolute inset-0 z-10 h-full w-full cursor-default opacity-0"
-        aria-label="Verification code"
+        aria-label={t('auth.verificationCode')}
       />
       {/* Eight boxes need a tighter gap than six to stay on one line on a phone. */}
       <div className="flex justify-between gap-1.5 sm:gap-2">
@@ -57,6 +59,7 @@ function OtpBoxes({
 }
 
 function VerifyForm() {
+  const t = useT()
   const router = useRouter()
   const params = useSearchParams()
   const { refresh } = useSession()
@@ -72,8 +75,8 @@ function VerifyForm() {
 
   useEffect(() => {
     if (cooldown <= 0) return
-    const t = setTimeout(() => setCooldown((c) => c - 1), 1000)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(timer)
   }, [cooldown])
 
   async function submit() {
@@ -82,7 +85,7 @@ function VerifyForm() {
 
     const res = await verifyOtp(email, code, type)
     if (!res.success) {
-      setError(res.error ?? 'Invalid code')
+      setError(res.error ?? t('auth.invalidCode'))
       setBusy(false)
       return
     }
@@ -101,7 +104,7 @@ function VerifyForm() {
   async function resend() {
     setError(null)
     const res = await resendOtp(email)
-    if (!res.success) setError(res.error ?? 'Could not resend the code')
+    if (!res.success) setError(res.error ?? t('auth.couldNotResendTheCode'))
     else setCooldown(45)
   }
 
@@ -109,9 +112,9 @@ function VerifyForm() {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="text-center">
-          <ErrorNote>No email to verify.</ErrorNote>
+          <ErrorNote>{t('auth.noEmailToVerify')}</ErrorNote>
           <Link href="/role?next=signup" className="mt-4 inline-block text-sm font-semibold text-brand-deep">
-            Start again
+            {t('auth.startAgain')}
           </Link>
         </div>
       </div>
@@ -124,12 +127,13 @@ function VerifyForm() {
     <div data-role={role} className="flex min-h-screen items-center justify-center px-4 py-8 sm:py-12">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center">
-          <Image src="/logo.png" alt="HelpersHob" width={72} height={66} priority className="h-auto" />
+          <Image src="/logo.png" alt={t('auth.helpershob')} width={72} height={66} priority className="h-auto" />
         </div>
 
-        <h1 className="text-center text-2xl font-bold tracking-tight text-ink">Check your email</h1>
+        <h1 className="text-center text-2xl font-bold tracking-tight text-ink">{t('auth.checkYourEmail')}</h1>
         <p className="mt-1 text-center text-sm text-ink-70">
-          We sent a {LENGTH}-digit code to <span className="font-semibold text-ink">{email}</span>
+          {t('auth.weSentACodeTo', { count: LENGTH })}{' '}
+          <span className="font-semibold text-ink">{email}</span>
         </p>
 
         <div className="mt-7 space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-sm">
@@ -144,7 +148,7 @@ function VerifyForm() {
             disabled={code.length < LENGTH}
             onClick={submit}
           >
-            Verify
+            {t('auth.verify')}
           </Button>
 
           <button
@@ -152,7 +156,7 @@ function VerifyForm() {
             disabled={cooldown > 0}
             className="w-full text-center text-sm font-semibold text-brand-deep disabled:text-ink-50"
           >
-            {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+            {cooldown > 0 ? `Resend code in ${cooldown}s` : t('auth.resendCode')}
           </button>
         </div>
       </div>

@@ -2,15 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
 import { uploadImage } from '@/lib/web/storage'
 import AvailabilityPicker, { normaliseSlots, validateSlots, type Slot } from '@/components/web/AvailabilityPicker'
 import ImagePicker from '@/components/web/ImagePicker'
 import LocationPicker, { type PickedLocation } from '@/components/web/LocationPicker'
+import LanguageCard from '@/components/web/LanguageCard'
+import SkillsPicker, { saveSkills, useSkillCatalogue } from '@/components/web/SkillsPicker'
 import { BackLink, Button, Card, ErrorNote, Field, INPUT_CLASS, PageTitle, Spinner } from '@/components/web/ui'
+import { useT } from '@/lib/i18n'
 
 export default function EditProfilePage() {
+  const t = useT()
   const router = useRouter()
   const { profile, refresh, isProvider } = useSession()
 
@@ -48,6 +53,28 @@ export default function EditProfilePage() {
   // change the hours they had set on the day they signed up.
   const [slots, setSlots] = useState<Slot[]>([])
   const [slotsLoaded, setSlotsLoaded] = useState(false)
+
+  // A provider picks up new trades over time, so the skills chosen at sign-up
+  // have to stay editable. The catalogue and the provider's own rows load
+  // separately — the catalogue is public, the picks are RLS-scoped to them.
+  const { skills, loading: loadingSkills } = useSkillCatalogue()
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [skillsLoaded, setSkillsLoaded] = useState(false)
+
+  useEffect(() => {
+    if (!isProvider || !profile?.user_id) return
+    let cancelled = false
+    void (async () => {
+      const { data } = await getBrowserSupabase()
+        .from('user_skills')
+        .select('skill_id')
+        .eq('user_id', profile.user_id)
+      if (cancelled) return
+      setSelectedSkills(((data as { skill_id: string }[] | null) ?? []).map((r) => r.skill_id))
+      setSkillsLoaded(true)
+    })()
+    return () => { cancelled = true }
+  }, [isProvider, profile?.user_id])
 
   useEffect(() => {
     if (!isProvider || !profile?.user_id) return
@@ -90,13 +117,20 @@ export default function EditProfilePage() {
     }
 
     if (isProvider && !location) {
-      setError('Please pick your work location from the suggestions')
+      setError(t('profile.pleasePickYourWorkLocationFrom'))
       return
     }
 
     if (isProvider) {
       const slotProblem = validateSlots(slots)
       if (slotProblem) { setError(slotProblem); return }
+    }
+
+    // Same floor the create screen enforces: a provider with no skills matches
+    // no job and would quietly vanish from every feed.
+    if (isProvider && selectedSkills.length === 0) {
+      setError(t('profile.pickAtLeastOneSkillIt'))
+      return
     }
 
     setBusy(true)
@@ -132,7 +166,7 @@ export default function EditProfilePage() {
       ...(imageUrl ? { profile_image_url: imageUrl } : {}),
     })
 
-    if (!res.success) { setError(res.error ?? 'Could not save your profile'); setBusy(false); return }
+    if (!res.success) { setError(res.error ?? t('profile.couldNotSaveYourProfile')); setBusy(false); return }
 
     if (isProvider) {
       const hours = await api.post('/providers/availability', {
@@ -140,7 +174,14 @@ export default function EditProfilePage() {
         slots: normaliseSlots(slots),
       })
       if (!hours.success) {
-        setError(hours.error ?? 'Your details were saved, but the hours were not')
+        setError(hours.error ?? t('profile.yourDetailsWereSavedButThe'))
+        setBusy(false)
+        return
+      }
+
+      const skillProblem = await saveSkills(profile.user_id, selectedSkills)
+      if (skillProblem) {
+        setError(`Your details were saved, but the skills were not: ${skillProblem}`)
         setBusy(false)
         return
       }
@@ -152,51 +193,67 @@ export default function EditProfilePage() {
 
   return (
     <div className="space-y-5">
-      <BackLink href="/profile">Back to profile</BackLink>
-      <PageTitle title="Edit profile" />
+      <BackLink href="/profile">{t('profile.backToProfile')}</BackLink>
+      <PageTitle title={t('profile.editProfile')} />
 
       <form onSubmit={onSubmit} className="space-y-5">
         {error && <ErrorNote>{error}</ErrorNote>}
 
-        <Card title="Photo">
-          <ImagePicker label="Profile picture" value={photo} onChange={setPhoto}
-            hint="Leave empty to keep your current photo." />
+        <Card title={t('profile.photo')}>
+          <ImagePicker label={t('profile.profilePicture')} value={photo} onChange={setPhoto}
+            hint={t('profile.leaveEmptyToKeepYourCurrent')} />
         </Card>
 
-        <Card title="Details" allowOverflow>
+        <Card title={t('profile.details')} allowOverflow>
           <div className="space-y-4">
-            <Field label="Name"><input value={form.name} onChange={set('name')} className={INPUT_CLASS} /></Field>
-            <Field label="Phone"><input value={form.phone} onChange={set('phone')} className={INPUT_CLASS} /></Field>
+            <Field label={t('profile.name')}><input value={form.name} onChange={set('name')} className={INPUT_CLASS} /></Field>
+            <Field label={t('profile.phone')}><input value={form.phone} onChange={set('phone')} className={INPUT_CLASS} /></Field>
             {/* A customer still types theirs: their create-profile screen asks
                 for the parts, not an address. */}
             {!isProvider && (
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="City"><input value={form.city} onChange={set('city')} className={INPUT_CLASS} /></Field>
-                <Field label="Postal code"><input value={form.zip} onChange={set('zip')} className={INPUT_CLASS} /></Field>
-                <Field label="State"><input value={form.state} onChange={set('state')} className={INPUT_CLASS} /></Field>
-                <Field label="Country"><input value={form.country} onChange={set('country')} className={INPUT_CLASS} /></Field>
+                <Field label={t('profile.city')}><input value={form.city} onChange={set('city')} className={INPUT_CLASS} /></Field>
+                <Field label={t('profile.postalCode')}><input value={form.zip} onChange={set('zip')} className={INPUT_CLASS} /></Field>
+                <Field label={t('profile.state')}><input value={form.state} onChange={set('state')} className={INPUT_CLASS} /></Field>
+                <Field label={t('profile.country')}><input value={form.country} onChange={set('country')} className={INPUT_CLASS} /></Field>
               </div>
             )}
             {isProvider && (
               <>
-                <Field label="Introduction">
+                <Field label={t('profile.introduction')}>
                   <textarea rows={4} value={form.introduction} onChange={set('introduction')} className={INPUT_CLASS} />
                 </Field>
                 <LocationPicker
                   value={location}
                   onChange={setLocation}
-                  label="Work location"
-                  hint="Jobs are matched to providers near the customer."
+                  label={t('profile.workLocation')}
+                  hint={t('profile.jobsAreMatchedToProvidersNear')}
                 />
               </>
             )}
           </div>
         </Card>
 
+        {profile && <LanguageCard userId={profile.user_id} />}
+
         {isProvider && (
-          <Card title="Working hours">
+          <Card title={t('profile.yourSkills')}>
+            <p className="mb-3 text-sm text-ink-70">
+              {t('profile.pickEverythingYouCanTakeOn')}
+            </p>
+            <SkillsPicker
+              skills={skills}
+              loading={loadingSkills || !skillsLoaded}
+              selected={selectedSkills}
+              onChange={setSelectedSkills}
+            />
+          </Card>
+        )}
+
+        {isProvider && (
+          <Card title={t('profile.workingHours')}>
             <p className="mb-4 text-sm text-ink-70">
-              Customers can only book you inside these hours.
+              {t('profile.customersCanOnlyBookYouInside')}
             </p>
             {slotsLoaded
               ? <AvailabilityPicker slots={slots} onChange={setSlots} />
@@ -204,7 +261,7 @@ export default function EditProfilePage() {
           </Card>
         )}
 
-        <Button type="submit" size="lg" fullWidth loading={busy}>Save changes</Button>
+        <Button type="submit" size="lg" fullWidth loading={busy}>{t('profile.saveChanges')}</Button>
       </form>
     </div>
   )
