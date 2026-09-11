@@ -1,7 +1,7 @@
-// The two languages the app ships. Adding a third means a new locale JSON, an
+// The languages the app ships. Adding another means a new locale JSON, an
 // entry here, and widening the profiles.preferred_language check constraint.
 
-export const LOCALES = ['en', 'nl'] as const
+export const LOCALES = ['en', 'nl', 'fr', 'de'] as const
 export type Locale = (typeof LOCALES)[number]
 
 export const DEFAULT_LOCALE: Locale = 'en'
@@ -10,11 +10,15 @@ export const DEFAULT_LOCALE: Locale = 'en'
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
   nl: 'Nederlands',
+  fr: 'Français',
+  de: 'Deutsch',
 }
 
 export const LOCALE_FLAGS: Record<Locale, string> = {
   en: '🇬🇧',
   nl: '🇳🇱',
+  fr: '🇫🇷',
+  de: '🇩🇪',
 }
 
 export function isLocale(value: unknown): value is Locale {

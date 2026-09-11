@@ -88,7 +88,7 @@ export async function signUp(
   if (profileError) {
     // Anything left that trips the foreign key is the same underlying cause.
     if (profileError.message.includes('profiles_user_id_fkey')) {
-      return { success: false, error: 'This email is already in use. Sign in instead, or use a different email.' }
+      return { success: false, error: i18n.t('auth.emailInUse') }
     }
     return { success: false, error: profileError.message }
   }
@@ -109,7 +109,7 @@ export async function verifyOtp(
     type: type === 'signup' ? 'email' : 'recovery',
   })
   if (error) return { success: false, error: translateAuthError(error.message) }
-  if (!data.user) return { success: false, error: 'Verification failed' }
+  if (!data.user) return { success: false, error: i18n.t('auth.verificationFailed') }
 
   if (type === 'signup') {
     // Email confirmed; the profile still has to be filled in.

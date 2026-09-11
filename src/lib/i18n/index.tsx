@@ -6,6 +6,8 @@ import { I18nextProvider, useTranslation as useI18nextTranslation } from 'react-
 
 import en from './locales/en.json'
 import nl from './locales/nl.json'
+import fr from './locales/fr.json'
+import de from './locales/de.json'
 import {
   DEFAULT_LOCALE,
   LOCALE_STORAGE_KEY,
@@ -30,10 +32,12 @@ void instance.init({
   resources: {
     en: { translation: en },
     nl: { translation: nl },
+    fr: { translation: fr },
+    de: { translation: de },
   },
   lng: DEFAULT_LOCALE,
   fallbackLng: DEFAULT_LOCALE,
-  // A key that exists in en.json but not yet in nl.json falls back to English
+  // A key that exists in en.json but not yet in another bundle falls back to English
   // rather than rendering the raw key at the user.
   returnEmptyString: false,
   interpolation: { escapeValue: false },

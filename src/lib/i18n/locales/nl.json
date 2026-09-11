@@ -119,7 +119,9 @@
     "accountExistsAsRole": "Er bestaat al een account met dit e-mailadres als {{role}}. Log in plaats daarvan in.",
     "accountExists": "Er bestaat al een account met dit e-mailadres. Log in, of gebruik een ander e-mailadres.",
     "noAccountFound": "Geen account gevonden met dit e-mailadres",
-    "weSentACodeTo": "Wij hebben een {{count}}-cijferige code gestuurd naar"
+    "weSentACodeTo": "Wij hebben een {{count}}-cijferige code gestuurd naar",
+    "emailInUse": "Dit e-mailadres is al in gebruik. Log in, of gebruik een ander e-mailadres.",
+    "verificationFailed": "Verificatie mislukt"
   },
   "profile": {
     "edit": "Profiel bewerken",

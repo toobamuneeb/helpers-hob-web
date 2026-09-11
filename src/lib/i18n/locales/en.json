@@ -119,7 +119,9 @@
     "accountExistsAsRole": "An account with this email already exists as {{role}}. Sign in instead.",
     "accountExists": "An account with this email already exists. Sign in instead, or use a different email.",
     "noAccountFound": "No account found with this email address",
-    "weSentACodeTo": "We sent a {{count}}-digit code to"
+    "weSentACodeTo": "We sent a {{count}}-digit code to",
+    "emailInUse": "This email is already in use. Sign in instead, or use a different email.",
+    "verificationFailed": "Verification failed"
   },
   "profile": {
     "edit": "Edit profile",
