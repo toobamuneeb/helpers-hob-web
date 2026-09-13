@@ -92,7 +92,7 @@ function ProviderJobs() {
     return (
       <Button size="sm" loading={jobs.busyId === o.offer_id} disabled={blocked}
         onClick={() => void jobs.providerPrimary(o)}>
-        {next[0]}
+        {t(next[0])}
       </Button>
     )
   }

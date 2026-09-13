@@ -398,7 +398,7 @@ function JobDetail({ offerId }: { offerId: string }) {
               <Button loading={busy}
                 disabled={busy || (providerPrimary[1] === 'start' && tooEarly)}
                 onClick={() => void jobs.providerPrimary(offer)}>
-                {providerPrimary[0]}
+                {t(providerPrimary[0])}
               </Button>
             )}
             {providerLifecycle && providerPrimary?.[1] === 'start' && tooEarly && (

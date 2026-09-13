@@ -21,11 +21,16 @@ export interface ActionableOffer {
   currency?: string | null
 }
 
-/** Start Now → Mark as Arrived → Mark Complete, as the mobile card labels them. */
-export function primaryAction(status: string): [label: string, action: string] | null {
-  if (status === 'scheduled') return ['Start Now', 'start']
-  if (status === 'pending') return ['Mark as Arrived', 'mark-awaiting']
-  if (status === 'active') return ['Mark Complete', 'mark-complete-provider']
+/**
+ * Start Now → Mark as Arrived → Mark Complete, as the mobile card labels them.
+ *
+ * The first element is a translation key rather than a label: this runs outside
+ * React, and every caller is a component holding the translator already.
+ */
+export function primaryAction(status: string): [labelKey: string, action: string] | null {
+  if (status === 'scheduled') return ['jobs.startNow', 'start']
+  if (status === 'pending') return ['jobs.markAsArrived', 'mark-awaiting']
+  if (status === 'active') return ['jobs.markComplete', 'mark-complete-provider']
   return null
 }
 

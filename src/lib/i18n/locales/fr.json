@@ -43,7 +43,9 @@
     "headBackToYourBookingTo": "Retournez à votre réservation pour laisser un avis. Si vous avez lancé cette opération depuis l’application, vous pouvez aussi fermer cette page.",
     "markThisJobAsCompletedThe": "Marquer cette mission comme terminée ? Il sera demandé au client de confirmer et de payer.",
     "markThisJobAsCompletedThe2": "Marquer cette mission comme terminée ? Le client confirmera et réglera la commission de la plateforme.",
-    "signInToSeeYourBooking": "Connectez-vous pour voir votre réservation"
+    "signInToSeeYourBooking": "Connectez-vous pour voir votre réservation",
+    "hourOne": "{{count}} heure",
+    "hourOther": "{{count}} heures"
   },
   "language": {
     "title": "Choisissez votre langue",
@@ -349,7 +351,9 @@
     "sendOffer": "Envoyer l’offre",
     "theNextJobIsScheduledAutomatically": "La mission suivante est planifiée automatiquement dès que la précédente est terminée. Cela continue jusqu’à ce que vous ou le prestataire demandiez l’annulation.",
     "theProviderWillAcceptOrDecline": "Le prestataire acceptera ou refusera cette offre.",
-    "theServicesThisProviderOffers": "Les prestations proposées par ce prestataire."
+    "theServicesThisProviderOffers": "Les prestations proposées par ce prestataire.",
+    "startNow": "Commencer maintenant",
+    "markAsArrived": "Marquer comme arrivé"
   },
   "bookings": {
     "bookings": "Réservations",
@@ -752,7 +756,8 @@
     "serviceProvider": "Prestataire",
     "showPassword": "Afficher le mot de passe",
     "useMyLocation": "Utiliser ma position",
-    "yourRequestGoesToHelpershobFor": "Votre demande est transmise à HelpersHob pour examen. Une fois approuvée, les missions à venir de cette série sont annulées — une mission déjà en cours se déroulera normalement."
+    "yourRequestGoesToHelpershobFor": "Votre demande est transmise à HelpersHob pour examen. Une fois approuvée, les missions à venir de cette série sont annulées — une mission déjà en cours se déroulera normalement.",
+    "addHours": "Ajouter des heures"
   },
   "landing": {
     "findHelpYouCanTrust": "Trouvez de l’aide en qui vous pouvez avoir confiance",

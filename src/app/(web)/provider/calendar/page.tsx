@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/lib/web/api'
-import { Badge, Card, Empty, ErrorNote, PageTitle, Spinner, date, money } from '@/components/web/ui'
+import { Badge, Card, Empty, ErrorNote, PageTitle, Spinner, date, money, duration} from '@/components/web/ui'
 import { useT } from '@/lib/i18n'
 
 interface CalendarOffer {
@@ -79,7 +79,7 @@ export default function ProviderCalendarPage() {
                           {o.offer_title ?? o.service_description ?? t('provider.booking')}
                         </span>
                         <span className="block truncate text-xs text-ink-50">
-                          {o.customer_name ?? ''}{o.service_duration ? ` · ${o.service_duration}` : ''}
+                          {o.customer_name ?? ''}{o.service_duration ? ` · ${duration(o.service_duration)}` : ''}
                         </span>
                       </span>
                       <Badge value={o.offer_status} />

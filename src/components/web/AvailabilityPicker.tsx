@@ -65,7 +65,7 @@ export default function AvailabilityPicker({
                   onClick={() => addSlot(day.id)}
                   className="text-sm font-semibold text-accent-role hover:underline"
                 >
-                  + Add hours
+                  + {t('ui.addHours')}
                 </button>
               ) : (
                 <span className="text-xs text-ink-50">

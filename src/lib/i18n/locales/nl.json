@@ -43,7 +43,9 @@
     "headBackToYourBookingTo": "Ga terug naar uw boeking om een beoordeling achter te laten. Als u dit vanuit de app bent gestart, kunt u deze pagina ook sluiten.",
     "markThisJobAsCompletedThe": "Deze klus als voltooid markeren? De klant wordt gevraagd te bevestigen en te betalen.",
     "markThisJobAsCompletedThe2": "Deze klus als voltooid markeren? De klant bevestigt en betaalt de platformkosten.",
-    "signInToSeeYourBooking": "Log in om uw boeking te bekijken"
+    "signInToSeeYourBooking": "Log in om uw boeking te bekijken",
+    "hourOne": "{{count}} uur",
+    "hourOther": "{{count}} uur"
   },
   "language": {
     "title": "Kies uw taal",
@@ -349,7 +351,9 @@
     "sendOffer": "Aanbieding sturen",
     "theNextJobIsScheduledAutomatically": "De volgende klus wordt automatisch ingepland zodra de vorige is voltooid. Dit loopt door totdat u of de dienstverlener verzoekt te annuleren.",
     "theProviderWillAcceptOrDecline": "De dienstverlener accepteert of weigert deze aanbieding.",
-    "theServicesThisProviderOffers": "De diensten die deze dienstverlener aanbiedt."
+    "theServicesThisProviderOffers": "De diensten die deze dienstverlener aanbiedt.",
+    "startNow": "Nu starten",
+    "markAsArrived": "Markeren als aangekomen"
   },
   "bookings": {
     "bookings": "Boekingen",
@@ -752,7 +756,8 @@
     "serviceProvider": "Dienstverlener",
     "showPassword": "Wachtwoord tonen",
     "useMyLocation": "Mijn locatie gebruiken",
-    "yourRequestGoesToHelpershobFor": "Uw verzoek gaat naar HelpersHob ter beoordeling. Na goedkeuring worden de komende klussen in deze reeks geannuleerd — een klus die al loopt gaat gewoon door."
+    "yourRequestGoesToHelpershobFor": "Uw verzoek gaat naar HelpersHob ter beoordeling. Na goedkeuring worden de komende klussen in deze reeks geannuleerd — een klus die al loopt gaat gewoon door.",
+    "addHours": "Uren toevoegen"
   },
   "landing": {
     "findHelpYouCanTrust": "Vind hulp waarop u kunt vertrouwen",

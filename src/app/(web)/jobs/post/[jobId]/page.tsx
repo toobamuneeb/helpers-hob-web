@@ -7,8 +7,7 @@ import { api } from '@/lib/web/api'
 import { useSession } from '@/lib/web/session'
 import MapView from '@/components/web/MapView'
 import {
-  Avatar, BackLink, Badge, Button, Card, ErrorNote, Spinner, Thumb, date, money, time,
-} from '@/components/web/ui'
+  Avatar, BackLink, Badge, Button, Card, ErrorNote, Spinner, Thumb, date, money, time, duration,} from '@/components/web/ui'
 import { useT } from '@/lib/i18n'
 import JobPhotos from '@/components/web/JobPhotos'
 
@@ -119,7 +118,7 @@ function JobPost({ jobId }: { jobId: string }) {
               </div>
               <p className="mt-1 text-sm text-ink-70">
                 {date(job.service_date)} at {time(job.service_time)}
-                {job.service_duration ? ` · ${job.service_duration}` : ''}
+                {job.service_duration ? ` · ${duration(job.service_duration)}` : ''}
               </p>
               {job.is_recurring && (
                 <span className="mt-2 inline-flex rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-ink">

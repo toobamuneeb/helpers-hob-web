@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { api } from '@/lib/web/api'
-import { Badge, Button, Card, Empty, ErrorNote, PageTitle, CardSkeleton, Thumb, date, money } from '@/components/web/ui'
+import { Badge, Button, Card, Empty, ErrorNote, PageTitle, CardSkeleton, Thumb, date, money, duration} from '@/components/web/ui'
 import { useT } from '@/lib/i18n'
 import JobPhotos from '@/components/web/JobPhotos'
 
@@ -92,7 +92,7 @@ export default function MyJobsPage() {
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-3 text-xs text-ink-50">
                     {j.service_date && <span>{date(j.service_date)}</span>}
-                    {j.service_duration && <span>{j.service_duration}</span>}
+                    {j.service_duration && <span>{duration(j.service_duration)}</span>}
                     {j.skill_name && <span>{j.skill_name}</span>}
                   </div>
                 </div>

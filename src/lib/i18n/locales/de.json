@@ -43,7 +43,9 @@
     "headBackToYourBookingTo": "Kehren Sie zu Ihrer Buchung zurück, um eine Bewertung abzugeben. Wenn Sie das aus der App heraus gestartet haben, können Sie diese Seite auch schließen.",
     "markThisJobAsCompletedThe": "Diesen Auftrag als abgeschlossen markieren? Der Kunde wird gebeten, zu bestätigen und zu bezahlen.",
     "markThisJobAsCompletedThe2": "Diesen Auftrag als abgeschlossen markieren? Der Kunde bestätigt und zahlt die Plattformgebühr.",
-    "signInToSeeYourBooking": "Melden Sie sich an, um Ihre Buchung zu sehen"
+    "signInToSeeYourBooking": "Melden Sie sich an, um Ihre Buchung zu sehen",
+    "hourOne": "{{count}} Stunde",
+    "hourOther": "{{count}} Stunden"
   },
   "language": {
     "title": "Wählen Sie Ihre Sprache",
@@ -349,7 +351,9 @@
     "sendOffer": "Angebot senden",
     "theNextJobIsScheduledAutomatically": "Der nächste Auftrag wird automatisch geplant, sobald der vorherige abgeschlossen ist. Das läuft weiter, bis Sie oder der Dienstleister eine Stornierung beantragen.",
     "theProviderWillAcceptOrDecline": "Der Dienstleister nimmt dieses Angebot an oder lehnt es ab.",
-    "theServicesThisProviderOffers": "Die Leistungen, die dieser Dienstleister anbietet."
+    "theServicesThisProviderOffers": "Die Leistungen, die dieser Dienstleister anbietet.",
+    "startNow": "Jetzt starten",
+    "markAsArrived": "Als angekommen markieren"
   },
   "bookings": {
     "bookings": "Buchungen",
@@ -752,7 +756,8 @@
     "serviceProvider": "Dienstleister",
     "showPassword": "Passwort anzeigen",
     "useMyLocation": "Meinen Standort verwenden",
-    "yourRequestGoesToHelpershobFor": "Ihre Anfrage geht zur Prüfung an HelpersHob. Nach Freigabe werden die kommenden Aufträge dieser Serie storniert — ein bereits laufender Auftrag wird noch ausgeführt."
+    "yourRequestGoesToHelpershobFor": "Ihre Anfrage geht zur Prüfung an HelpersHob. Nach Freigabe werden die kommenden Aufträge dieser Serie storniert — ein bereits laufender Auftrag wird noch ausgeführt.",
+    "addHours": "Zeiten hinzufügen"
   },
   "landing": {
     "findHelpYouCanTrust": "Finden Sie Hilfe, der Sie vertrauen können",

@@ -43,7 +43,9 @@
     "headBackToYourBookingTo": "Head back to your booking to leave a review. If you started this from the app, you can close this page instead.",
     "markThisJobAsCompletedThe": "Mark this job as completed? The customer will be asked to confirm and pay.",
     "markThisJobAsCompletedThe2": "Mark this job as completed? The customer will confirm and pay the platform fee.",
-    "signInToSeeYourBooking": "Sign in to see your booking"
+    "signInToSeeYourBooking": "Sign in to see your booking",
+    "hourOne": "{{count}} hour",
+    "hourOther": "{{count}} hours"
   },
   "language": {
     "title": "Choose your language",
@@ -349,7 +351,9 @@
     "sendOffer": "Send offer",
     "theNextJobIsScheduledAutomatically": "The next job is scheduled automatically after each one is completed. It continues until you or the provider request to cancel.",
     "theProviderWillAcceptOrDecline": "The provider will accept or decline this offer.",
-    "theServicesThisProviderOffers": "The services this provider offers."
+    "theServicesThisProviderOffers": "The services this provider offers.",
+    "startNow": "Start Now",
+    "markAsArrived": "Mark as Arrived"
   },
   "bookings": {
     "bookings": "Bookings",
@@ -752,7 +756,8 @@
     "serviceProvider": "Service provider",
     "showPassword": "Show password",
     "useMyLocation": "Use my location",
-    "yourRequestGoesToHelpershobFor": "Your request goes to HelpersHob for review. Once approved, upcoming jobs in this series are canceled — a job already in progress will still go ahead."
+    "yourRequestGoesToHelpershobFor": "Your request goes to HelpersHob for review. Once approved, upcoming jobs in this series are canceled — a job already in progress will still go ahead.",
+    "addHours": "Add hours"
   },
   "landing": {
     "findHelpYouCanTrust": "Find help you can trust",

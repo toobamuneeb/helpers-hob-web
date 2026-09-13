@@ -6,6 +6,7 @@
 import Link from 'next/link'
 import { useState, type ReactNode } from 'react'
 import { useT } from '@/lib/i18n'
+import { i18n } from '@/lib/i18n'
 
 // ── layout ──────────────────────────────────────────────────────────────────
 
@@ -392,24 +393,63 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
 
 // ── formatting ──────────────────────────────────────────────────────────────
 
+/**
+ * The BCP-47 tag these formatters should use.
+ *
+ * Read from the i18next instance rather than taken as an argument: every one of
+ * these is a plain function called from dozens of places, and threading a
+ * locale through all of them to format a month name is not worth it. The
+ * instance is the same one the provider switches, so this follows the UI.
+ *
+ * English maps to en-IE, not en-US: this is a euro app and the rest of the
+ * formatting — day before month, 24-hour clock — already assumed it.
+ */
+const INTL_TAGS: Record<string, string> = {
+  en: 'en-IE', nl: 'nl-NL', fr: 'fr-FR', de: 'de-DE',
+}
+
+function intlTag(): string {
+  return INTL_TAGS[i18n.language?.split('-')[0] ?? 'en'] ?? 'en-IE'
+}
+
 export function money(value: unknown, currency = 'EUR'): string {
   const n = typeof value === 'number' ? value : parseFloat(String(value ?? ''))
   if (!Number.isFinite(n)) return '—'
-  return new Intl.NumberFormat('en-IE', { style: 'currency', currency }).format(n)
+  return new Intl.NumberFormat(intlTag(), { style: 'currency', currency }).format(n)
+}
+
+/**
+ * A stored service_duration, rendered in the reader's language.
+ *
+ * The column holds English text — "1 hour", "3 hours" — written at the time the
+ * job was posted, so it cannot simply be translated at the point of display
+ * without reading it first. Rows already in the database keep that wording
+ * forever, which is why this parses rather than formats.
+ *
+ * Anything that does not match is passed through untouched: better an English
+ * duration than a blank where a number should be.
+ */
+export function duration(value?: string | null): string {
+  if (!value) return '—'
+  const m = /^\s*(\d+(?:[.,]\d+)?)\s*(hours?|hrs?|h)\s*$/i.exec(value)
+  if (!m) return value
+  const n = Number(m[1].replace(',', '.'))
+  if (!Number.isFinite(n)) return value
+  return i18n.t(n === 1 ? 'common.hourOne' : 'common.hourOther', { count: n })
 }
 
 export function date(value?: string | null): string {
   if (!value) return '—'
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('en-IE', { day: '2-digit', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString(intlTag(), { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 export function time(value?: string | null): string {
   if (!value) return '—'
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleTimeString(intlTag(), { hour: '2-digit', minute: '2-digit' })
 }
 
 export function dateTime(value?: string | null): string {
