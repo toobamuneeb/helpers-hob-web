@@ -42,8 +42,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
     const res = await api.get<Message[]>(`/chat/messages/${chatId}?limit=100`)
     if (res.success) {
       const list = Array.isArray(res.data) ? res.data : []
-      // The API returns newest-first for the inverted mobile list; the web
-      // reads top-to-bottom, so oldest goes first.
+
       setMessages([...list].reverse())
       setError(null)
     } else {
@@ -52,8 +51,6 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
     setLoading(false)
   }, [chatId])
 
-  // Who this conversation is with. /chat/list already flattens it to
-  // recipient_*, so no extra endpoint is needed.
   useEffect(() => {
     if (!profile) return
     let cancelled = false
@@ -72,15 +69,12 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
   useEffect(() => {
     let cancelled = false
-    // Deferred so the first fetch's setState lands outside the effect body.
     const first = setTimeout(() => {
       if (cancelled) return
       void load()
       void api.post('/chat/mark-read', { chat_id: chatId })
     }, 0)
-    // Realtime on this chat's messages, the same subscription the mobile
-    // useChat opens. The slow interval stays underneath as a safety net for a
-    // dropped socket — long enough not to be the thing doing the work.
+
     const supabase = getBrowserSupabase()
     const channel = supabase
       .channel(`chat-messages-${chatId}`)
@@ -120,7 +114,9 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
       message_type: 'text',
     })
     if (res.success) { setText(''); await load() }
-    else setError(res.error ?? t('chat.messageNotSent'))
+    else if (res.code === 'CONTACT_BLOCKED' || res.error === 'CONTACT_BLOCKED') {
+      setError(t('chat.contactBlocked'))
+    } else setError(res.error ?? t('chat.messageNotSent'))
     setSending(false)
   }
 

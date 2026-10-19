@@ -406,7 +406,8 @@
     "couldNotLoadThisConversation": "Could not load this conversation",
     "messageNotSent": "Message not sent",
     "conversation": "Conversation",
-    "noMessagesYet": "No messages yet"
+    "noMessagesYet": "No messages yet",
+    "contactBlocked": "Phone numbers and email addresses can only be shared once the booking is confirmed. Book this provider to continue."
   },
   "payments": {
     "totalPaid": "Total paid",
@@ -579,7 +580,9 @@
       "stopA": "Open the booking and choose “Cancel recurring request”. Our team reviews it, and once approved the upcoming jobs are canceled. A job already in progress still goes ahead.",
       "payoutQ": "When does a provider get paid?",
       "payoutA": "After the customer confirms the job is complete and the payment succeeds, the payout goes to the provider’s connected account, minus the platform fee."
-    }
+    },
+    "callUs": "Call us",
+    "phoneLabel": "Phone:"
   },
   "home": {
     "welcomeBack": "Welcome back",

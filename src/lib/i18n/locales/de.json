@@ -406,7 +406,8 @@
     "couldNotLoadThisConversation": "Diese Unterhaltung konnte nicht geladen werden",
     "messageNotSent": "Nachricht nicht gesendet",
     "conversation": "Unterhaltung",
-    "noMessagesYet": "Noch keine Nachrichten"
+    "noMessagesYet": "Noch keine Nachrichten",
+    "contactBlocked": "Telefonnummern und E-Mail-Adressen können erst geteilt werden, sobald die Buchung bestätigt ist. Buchen Sie diesen Dienstleister, um fortzufahren."
   },
   "payments": {
     "totalPaid": "Gesamt bezahlt",
@@ -579,7 +580,9 @@
       "stopA": "Öffnen Sie die Buchung und wählen Sie „Wiederkehrende Anfrage stornieren“. Unser Team prüft den Antrag; nach Freigabe werden die kommenden Aufträge storniert. Ein bereits laufender Auftrag wird noch ausgeführt.",
       "payoutQ": "Wann wird ein Dienstleister bezahlt?",
       "payoutA": "Nachdem der Kunde bestätigt hat, dass der Auftrag abgeschlossen ist, und die Zahlung erfolgreich war, geht die Auszahlung abzüglich der Plattformgebühr auf das verknüpfte Konto des Dienstleisters."
-    }
+    },
+    "callUs": "Rufen Sie uns an",
+    "phoneLabel": "Telefon:"
   },
   "home": {
     "welcomeBack": "Willkommen zurück",

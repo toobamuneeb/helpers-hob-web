@@ -406,7 +406,8 @@
     "couldNotLoadThisConversation": "Impossible de charger cette conversation",
     "messageNotSent": "Message non envoyé",
     "conversation": "Conversation",
-    "noMessagesYet": "Aucun message pour l’instant"
+    "noMessagesYet": "Aucun message pour l’instant",
+    "contactBlocked": "Les numéros de téléphone et les adresses e-mail ne peuvent être partagés qu’une fois la réservation confirmée. Réservez ce prestataire pour continuer."
   },
   "payments": {
     "totalPaid": "Total payé",
@@ -579,7 +580,9 @@
       "stopA": "Ouvrez la réservation et choisissez « Annuler la demande récurrente ». Notre équipe l’examine et, une fois approuvée, les missions à venir sont annulées. Une mission déjà en cours se déroule normalement.",
       "payoutQ": "Quand un prestataire est-il payé ?",
       "payoutA": "Une fois que le client confirme que la mission est terminée et que le paiement aboutit, le versement est effectué sur le compte connecté du prestataire, déduction faite de la commission de la plateforme."
-    }
+    },
+    "callUs": "Appelez-nous",
+    "phoneLabel": "Téléphone :"
   },
   "home": {
     "welcomeBack": "Bon retour",

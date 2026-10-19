@@ -406,7 +406,8 @@
     "couldNotLoadThisConversation": "Dit gesprek kon niet worden geladen",
     "messageNotSent": "Bericht niet verzonden",
     "conversation": "Gesprek",
-    "noMessagesYet": "Nog geen berichten"
+    "noMessagesYet": "Nog geen berichten",
+    "contactBlocked": "Telefoonnummers en e-mailadressen kunnen pas worden gedeeld zodra de boeking is bevestigd. Boek deze dienstverlener om verder te gaan."
   },
   "payments": {
     "totalPaid": "Totaal betaald",
@@ -579,7 +580,9 @@
       "stopA": "Open de boeking en kies “Terugkerende aanvraag annuleren”. Ons team beoordeelt het verzoek en zodra het is goedgekeurd worden de komende klussen geannuleerd. Een klus die al loopt gaat gewoon door.",
       "payoutQ": "Wanneer wordt een dienstverlener betaald?",
       "payoutA": "Nadat de klant heeft bevestigd dat de klus is voltooid en de betaling is geslaagd, gaat de uitbetaling naar het gekoppelde account van de dienstverlener, minus de platformkosten."
-    }
+    },
+    "callUs": "Bel ons",
+    "phoneLabel": "Telefoon:"
   },
   "home": {
     "welcomeBack": "Welkom terug",

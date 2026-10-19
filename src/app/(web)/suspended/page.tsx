@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useSession } from '@/lib/web/session'
 import { Button } from '@/components/web/ui'
 import { useT } from '@/lib/i18n'
+import { SUPPORT_EMAIL, SUPPORT_EMAIL_URL } from '@/lib/contact'
 
 export default function SuspendedPage() {
   const t = useT()
@@ -26,7 +27,7 @@ export default function SuspendedPage() {
         </p>
 
         <div className="mt-7 space-y-3">
-          <a href="mailto:support@helpershob.com" className="block">
+          <a href={SUPPORT_EMAIL_URL} className="block">
             <Button size="lg" fullWidth>{t('status.contactSupport')}</Button>
           </a>
           <Button size="lg" variant="outline" fullWidth onClick={signOut}>{t('status.signOut')}</Button>

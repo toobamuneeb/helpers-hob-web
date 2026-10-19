@@ -5,15 +5,9 @@ import { useState } from 'react'
 import { useSession } from '@/lib/web/session'
 import { Button } from '@/components/web/ui'
 import { useT } from '@/lib/i18n'
+import { SUPPORT_EMAIL, SUPPORT_EMAIL_URL } from '@/lib/contact'
 
-/**
- * Shown while profile_status is 'pending'.
- *
- * For providers this is the real gate: documents are submitted and an admin has
- * to approve them. The API refuses their requests with 403
- * ACCOUNT_PENDING_APPROVAL, so letting them into the app would only produce
- * failing screens.
- */
+
 export default function PendingApprovalPage() {
   const { profile, refresh, signOut } = useSession()
   const t = useT()
@@ -64,7 +58,7 @@ export default function PendingApprovalPage() {
 
         <p className="mt-7 text-xs text-ink-50">
           Need help?{' '}
-          <a href="mailto:support@helpershob.com" className="font-semibold text-brand-deep hover:underline">
+          <a href={SUPPORT_EMAIL_URL} className="font-semibold text-brand-deep hover:underline">
             support@helpershob.com
           </a>
         </p>

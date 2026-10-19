@@ -2,6 +2,7 @@
 
 import PolicyBackLink from '@/components/web/PolicyBackLink'
 import { useT } from '@/lib/i18n'
+import { SUPPORT_EMAIL, SUPPORT_EMAIL_URL } from '@/lib/contact'
 
 export default function PrivacyPolicyPage() {
   const t = useT()
@@ -40,7 +41,7 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-base font-bold text-ink">{t('legal.yourRights')}</h2>
           <p className="mt-1">
             {t('legal.yourRightsBody')}{' '}
-            <a href="mailto:support@helpershob.com" className="font-semibold text-accent-role underline">
+            <a href={SUPPORT_EMAIL_URL} className="font-semibold text-accent-role underline">
               support@helpershob.com
             </a>.
           </p>
