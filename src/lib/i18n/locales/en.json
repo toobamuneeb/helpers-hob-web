@@ -830,7 +830,8 @@
     "unauthorizedInvalidToken": "Unauthorized - invalid token",
     "validationFailed": "Validation failed",
     "requestFailed": "Request failed ({{status}})",
-    "couldNotReachTheServer": "Could not reach the server"
+    "couldNotReachTheServer": "Could not reach the server",
+    "userBlocked": "You can no longer send messages or offers to this user."
   },
   "authError": {
     "tokenExpired": "That code has expired or is not valid. Request a new one.",
@@ -845,5 +846,28 @@
     "passwordSameAsOld": "Your new password must be different from the old one.",
     "userNotFound": "No account found with this email address.",
     "networkFailed": "Could not reach the server. Check your connection and try again."
+  },
+  "accountDeletion": {
+    "title": "Delete your HelpersHob account",
+    "intro": "You can permanently delete your HelpersHob account and personal data at any time, in the app or on this page.",
+    "inAppTitle": "Delete in the app",
+    "inAppStep1": "Open the HelpersHob app and sign in.",
+    "inAppStep2": "Go to Profile.",
+    "inAppStep3": "Tap Delete Account and confirm.",
+    "webTitle": "Delete on this page",
+    "signInFirst": "Sign in with the email and password of the account you want to delete.",
+    "signedInAs": "Signed in as",
+    "confirmCheckbox": "I understand that my account and personal data will be permanently deleted and this cannot be undone.",
+    "deleteButton": "Delete my account permanently",
+    "done": "Your account has been deleted. You have been signed out and can no longer log in with this account.",
+    "activeBookings": "You have a booking in progress. Complete or cancel it before deleting your account.",
+    "failed": "Could not delete your account. Please try again or contact support.",
+    "notConfirmed": "This email address has not been verified yet. Please contact support to delete this account.",
+    "deletedTitle": "What is deleted",
+    "deletedBody": "Your name, email address, phone number, address and location, profile photo, ID documents, introduction, skills, availability and saved payout tokens are deleted immediately. Your login is disabled permanently, open job posts are closed and pending offers are canceled.",
+    "keptTitle": "What is kept",
+    "keptBody": "Records that other users or the law rely on — completed bookings, payments and reviews — are kept in anonymised form as \"Deleted user\" and no longer linked to your personal details. Payment records are kept for up to 7 years to meet Dutch tax and accounting obligations.",
+    "helpTitle": "Can't sign in?",
+    "helpBody": "Contact us from the email address on your account and we will delete it within 30 days:"
   }
 }

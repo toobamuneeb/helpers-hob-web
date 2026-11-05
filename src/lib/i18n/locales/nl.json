@@ -830,7 +830,8 @@
     "unauthorizedInvalidToken": "Geen toegang — ongeldige token",
     "validationFailed": "Validatie mislukt",
     "requestFailed": "Aanvraag mislukt ({{status}})",
-    "couldNotReachTheServer": "De server is niet bereikbaar"
+    "couldNotReachTheServer": "De server is niet bereikbaar",
+    "userBlocked": "U kunt deze gebruiker geen berichten of aanbiedingen meer sturen."
   },
   "authError": {
     "tokenExpired": "Die code is verlopen of niet geldig. Vraag een nieuwe aan.",
@@ -845,5 +846,28 @@
     "passwordSameAsOld": "Uw nieuwe wachtwoord moet afwijken van het oude.",
     "userNotFound": "Geen account gevonden met dit e-mailadres.",
     "networkFailed": "De server is niet bereikbaar. Controleer uw verbinding en probeer het opnieuw."
+  },
+  "accountDeletion": {
+    "title": "Uw HelpersHob-account verwijderen",
+    "intro": "U kunt uw HelpersHob-account en persoonlijke gegevens op elk moment permanent verwijderen, in de app of op deze pagina.",
+    "inAppTitle": "Verwijderen in de app",
+    "inAppStep1": "Open de HelpersHob-app en log in.",
+    "inAppStep2": "Ga naar Profiel.",
+    "inAppStep3": "Tik op Account verwijderen en bevestig.",
+    "webTitle": "Verwijderen op deze pagina",
+    "signInFirst": "Log in met het e-mailadres en wachtwoord van het account dat u wilt verwijderen.",
+    "signedInAs": "Ingelogd als",
+    "confirmCheckbox": "Ik begrijp dat mijn account en persoonlijke gegevens permanent worden verwijderd en dat dit niet ongedaan kan worden gemaakt.",
+    "deleteButton": "Mijn account permanent verwijderen",
+    "done": "Uw account is verwijderd. U bent uitgelogd en kunt niet meer inloggen met dit account.",
+    "activeBookings": "U heeft een lopende boeking. Rond deze af of annuleer deze voordat u uw account verwijdert.",
+    "failed": "Uw account kon niet worden verwijderd. Probeer het opnieuw of neem contact op met support.",
+    "notConfirmed": "Dit e-mailadres is nog niet geverifieerd. Neem contact op met support om dit account te verwijderen.",
+    "deletedTitle": "Wat wordt verwijderd",
+    "deletedBody": "Uw naam, e-mailadres, telefoonnummer, adres en locatie, profielfoto, identiteitsdocumenten, introductie, vaardigheden, beschikbaarheid en opgeslagen uitbetalingstokens worden direct verwijderd. Uw login wordt permanent uitgeschakeld, open klussen worden gesloten en openstaande aanbiedingen geannuleerd.",
+    "keptTitle": "Wat wordt bewaard",
+    "keptBody": "Gegevens waarop andere gebruikers of de wet vertrouwen — afgeronde boekingen, betalingen en beoordelingen — worden geanonimiseerd bewaard als \"Verwijderde gebruiker\" en zijn niet meer gekoppeld aan uw persoonlijke gegevens. Betaalgegevens worden maximaal 7 jaar bewaard vanwege de Nederlandse fiscale en administratieve bewaarplicht.",
+    "helpTitle": "Kunt u niet inloggen?",
+    "helpBody": "Neem contact met ons op vanaf het e-mailadres van uw account, dan verwijderen wij het binnen 30 dagen:"
   }
 }

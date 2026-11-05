@@ -830,7 +830,8 @@
     "unauthorizedInvalidToken": "Kein Zugriff — ungültiges Token",
     "validationFailed": "Validierung fehlgeschlagen",
     "requestFailed": "Anfrage fehlgeschlagen ({{status}})",
-    "couldNotReachTheServer": "Der Server ist nicht erreichbar"
+    "couldNotReachTheServer": "Der Server ist nicht erreichbar",
+    "userBlocked": "Sie können diesem Nutzer keine Nachrichten oder Angebote mehr senden."
   },
   "authError": {
     "tokenExpired": "Dieser Code ist abgelaufen oder ungültig. Fordern Sie einen neuen an.",
@@ -845,5 +846,28 @@
     "passwordSameAsOld": "Ihr neues Passwort muss sich vom alten unterscheiden.",
     "userNotFound": "Kein Konto mit dieser E-Mail-Adresse gefunden.",
     "networkFailed": "Der Server ist nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+  },
+  "accountDeletion": {
+    "title": "Ihr HelpersHob-Konto löschen",
+    "intro": "Sie können Ihr HelpersHob-Konto und Ihre persönlichen Daten jederzeit dauerhaft löschen – in der App oder auf dieser Seite.",
+    "inAppTitle": "In der App löschen",
+    "inAppStep1": "Öffnen Sie die HelpersHob-App und melden Sie sich an.",
+    "inAppStep2": "Gehen Sie zu Profil.",
+    "inAppStep3": "Tippen Sie auf Konto löschen und bestätigen Sie.",
+    "webTitle": "Auf dieser Seite löschen",
+    "signInFirst": "Melden Sie sich mit der E-Mail-Adresse und dem Passwort des Kontos an, das Sie löschen möchten.",
+    "signedInAs": "Angemeldet als",
+    "confirmCheckbox": "Ich verstehe, dass mein Konto und meine persönlichen Daten dauerhaft gelöscht werden und dies nicht rückgängig gemacht werden kann.",
+    "deleteButton": "Mein Konto dauerhaft löschen",
+    "done": "Ihr Konto wurde gelöscht. Sie wurden abgemeldet und können sich mit diesem Konto nicht mehr anmelden.",
+    "activeBookings": "Sie haben eine laufende Buchung. Schließen Sie sie ab oder stornieren Sie sie, bevor Sie Ihr Konto löschen.",
+    "failed": "Ihr Konto konnte nicht gelöscht werden. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.",
+    "notConfirmed": "Diese E-Mail-Adresse wurde noch nicht bestätigt. Bitte wenden Sie sich an den Support, um dieses Konto zu löschen.",
+    "deletedTitle": "Was gelöscht wird",
+    "deletedBody": "Ihr Name, Ihre E-Mail-Adresse, Telefonnummer, Adresse und Standort, Ihr Profilfoto, Ausweisdokumente, Ihre Vorstellung, Fähigkeiten, Verfügbarkeit und gespeicherte Auszahlungs-Tokens werden sofort gelöscht. Ihre Anmeldung wird dauerhaft deaktiviert, offene Aufträge werden geschlossen und ausstehende Angebote storniert.",
+    "keptTitle": "Was aufbewahrt wird",
+    "keptBody": "Daten, auf die andere Nutzer oder das Gesetz angewiesen sind – abgeschlossene Buchungen, Zahlungen und Bewertungen – werden anonymisiert als „Gelöschter Nutzer“ aufbewahrt und sind nicht mehr mit Ihren persönlichen Daten verknüpft. Zahlungsdaten werden bis zu 7 Jahre aufbewahrt, um niederländische Steuer- und Buchhaltungspflichten zu erfüllen.",
+    "helpTitle": "Sie können sich nicht anmelden?",
+    "helpBody": "Kontaktieren Sie uns von der E-Mail-Adresse Ihres Kontos aus, und wir löschen es innerhalb von 30 Tagen:"
   }
 }

@@ -19,7 +19,7 @@ const AUTH_ROUTES = [
 // Readable by anyone, signed in or not. These must NOT bounce — a signed-in
 // customer tapping "Privacy policy" in their profile wants to read it, not be
 // sent back to the home page.
-const OPEN_ROUTES = ['/privacy-policy', '/help']
+const OPEN_ROUTES = ['/privacy-policy', '/help', '/delete-account']
 
 const GATE_ROUTES = [
   '/create-profile', '/provider/create-profile', '/pending-approval', '/suspended', '/removed',

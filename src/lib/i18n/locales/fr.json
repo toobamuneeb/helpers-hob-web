@@ -830,7 +830,8 @@
     "unauthorizedInvalidToken": "Accès refusé — jeton invalide",
     "validationFailed": "Échec de la validation",
     "requestFailed": "Échec de la requête ({{status}})",
-    "couldNotReachTheServer": "Impossible de joindre le serveur"
+    "couldNotReachTheServer": "Impossible de joindre le serveur",
+    "userBlocked": "Vous ne pouvez plus envoyer de messages ni d'offres à cet utilisateur."
   },
   "authError": {
     "tokenExpired": "Ce code a expiré ou n’est pas valide. Demandez-en un nouveau.",
@@ -845,5 +846,28 @@
     "passwordSameAsOld": "Votre nouveau mot de passe doit être différent de l’ancien.",
     "userNotFound": "Aucun compte trouvé avec cette adresse e-mail.",
     "networkFailed": "Impossible de joindre le serveur. Vérifiez votre connexion et réessayez."
+  },
+  "accountDeletion": {
+    "title": "Supprimer votre compte HelpersHob",
+    "intro": "Vous pouvez supprimer définitivement votre compte HelpersHob et vos données personnelles à tout moment, dans l'application ou sur cette page.",
+    "inAppTitle": "Supprimer dans l'application",
+    "inAppStep1": "Ouvrez l'application HelpersHob et connectez-vous.",
+    "inAppStep2": "Allez dans Profil.",
+    "inAppStep3": "Appuyez sur Supprimer le compte et confirmez.",
+    "webTitle": "Supprimer sur cette page",
+    "signInFirst": "Connectez-vous avec l'adresse e-mail et le mot de passe du compte à supprimer.",
+    "signedInAs": "Connecté en tant que",
+    "confirmCheckbox": "Je comprends que mon compte et mes données personnelles seront définitivement supprimés et que cette action est irréversible.",
+    "deleteButton": "Supprimer définitivement mon compte",
+    "done": "Votre compte a été supprimé. Vous avez été déconnecté et ne pouvez plus vous connecter avec ce compte.",
+    "activeBookings": "Vous avez une réservation en cours. Terminez-la ou annulez-la avant de supprimer votre compte.",
+    "failed": "Impossible de supprimer votre compte. Veuillez réessayer ou contacter le support.",
+    "notConfirmed": "Cette adresse e-mail n'a pas encore été vérifiée. Veuillez contacter le support pour supprimer ce compte.",
+    "deletedTitle": "Ce qui est supprimé",
+    "deletedBody": "Votre nom, adresse e-mail, numéro de téléphone, adresse et localisation, photo de profil, pièces d'identité, présentation, compétences, disponibilités et jetons de paiement enregistrés sont supprimés immédiatement. Votre connexion est désactivée définitivement, les missions ouvertes sont fermées et les offres en attente annulées.",
+    "keptTitle": "Ce qui est conservé",
+    "keptBody": "Les données dont d'autres utilisateurs ou la loi ont besoin — réservations terminées, paiements et avis — sont conservées de façon anonymisée sous le nom « Utilisateur supprimé » et ne sont plus liées à vos données personnelles. Les données de paiement sont conservées jusqu'à 7 ans pour respecter les obligations fiscales et comptables néerlandaises.",
+    "helpTitle": "Vous ne pouvez pas vous connecter ?",
+    "helpBody": "Contactez-nous depuis l'adresse e-mail de votre compte et nous le supprimerons sous 30 jours :"
   }
 }

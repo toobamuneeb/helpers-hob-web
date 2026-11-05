@@ -13,6 +13,7 @@
 export const SERVER_MESSAGE_KEYS: Record<string, string> = {
   "A cancellation request for this series is already awaiting review": "api.aCancellationRequestForThisSeries",
   "Chat ID required": "api.chatIdRequired",
+  "USER_BLOCKED": "api.userBlocked",
   "Could not identify payment to fix": "api.couldNotIdentifyPaymentToFix",
   "Customer not found": "api.customerNotFound",
   "Database connection failed": "api.databaseConnectionFailed",
